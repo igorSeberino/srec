@@ -25,6 +25,7 @@ export function ReservationItem({ reservation, resourceName, onStatusChange, onD
               style={{ borderColor: '#16a34a', color: '#16a34a' }}
               onClick={() => onStatusChange(id, 'completed')}
               title="Concluir"
+              aria-label={`Concluir reserva de ${user_name} em ${resourceName}`}
             >
               <CheckCircle2 size={16} />
             </button>
@@ -32,6 +33,7 @@ export function ReservationItem({ reservation, resourceName, onStatusChange, onD
               className="btn-outline-danger"
               onClick={() => onStatusChange(id, 'cancelled')}
               title="Cancelar Reserva"
+              aria-label={`Cancelar reserva de ${user_name} em ${resourceName}`}
             >
               <XCircle size={16} />
             </button>
@@ -41,6 +43,7 @@ export function ReservationItem({ reservation, resourceName, onStatusChange, onD
           className="btn-outline-danger"
           onClick={() => onDelete(id)}
           title="Excluir Definitivamente"
+          aria-label={`Excluir definitivamente a reserva de ${user_name} em ${resourceName}`}
         >
           <Trash2 size={16} />
         </button>

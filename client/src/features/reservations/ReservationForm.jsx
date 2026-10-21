@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Calendar } from 'lucide-react';
 
 export function ReservationForm({ resources, onSubmit }) {
@@ -9,6 +9,8 @@ export function ReservationForm({ resources, onSubmit }) {
 
   // Sem escolha explicita, vale o primeiro espaco da lista (como o select exibe).
   const resourceId = selectedResourceId || resources[0]?.id || '';
+
+  const id = useId();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,8 +30,9 @@ export function ReservationForm({ resources, onSubmit }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="form-group">
-        <label>Selecione o Espaço</label>
+        <label htmlFor={`${id}-resource`}>Selecione o Espaço</label>
         <select
+          id={`${id}-resource`}
           className="form-control"
           value={resourceId}
           onChange={(e) => setSelectedResourceId(e.target.value)}
@@ -43,8 +46,9 @@ export function ReservationForm({ resources, onSubmit }) {
         </select>
       </div>
       <div className="form-group">
-        <label>Nome do Responsável</label>
+        <label htmlFor={`${id}-user`}>Nome do Responsável</label>
         <input
+          id={`${id}-user`}
           type="text"
           className="form-control"
           placeholder="Ex: Carlos Silva"
@@ -54,8 +58,9 @@ export function ReservationForm({ resources, onSubmit }) {
         />
       </div>
       <div className="form-group">
-        <label>Horário de Início</label>
+        <label htmlFor={`${id}-start`}>Horário de Início</label>
         <input
+          id={`${id}-start`}
           type="datetime-local"
           className="form-control"
           value={startTime}
@@ -64,8 +69,9 @@ export function ReservationForm({ resources, onSubmit }) {
         />
       </div>
       <div className="form-group">
-        <label>Horário de Término</label>
+        <label htmlFor={`${id}-end`}>Horário de Término</label>
         <input
+          id={`${id}-end`}
           type="datetime-local"
           className="form-control"
           value={endTime}

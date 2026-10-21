@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import { RESOURCE_TYPES } from './resourceTypes';
 
@@ -6,6 +6,8 @@ export function ResourceForm({ onSubmit }) {
   const [name, setName] = useState('');
   const [type, setType] = useState('workstation');
   const [capacity, setCapacity] = useState(1);
+
+  const id = useId();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,8 +21,9 @@ export function ResourceForm({ onSubmit }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="form-group">
-        <label>Nome do Espaço / Estação</label>
+        <label htmlFor={`${id}-name`}>Nome do Espaço / Estação</label>
         <input
+          id={`${id}-name`}
           type="text"
           className="form-control"
           placeholder="Ex: Sala de Reunião Alpha"
@@ -30,8 +33,13 @@ export function ResourceForm({ onSubmit }) {
         />
       </div>
       <div className="form-group">
-        <label>Tipo</label>
-        <select className="form-control" value={type} onChange={(e) => setType(e.target.value)}>
+        <label htmlFor={`${id}-type`}>Tipo</label>
+        <select
+          id={`${id}-type`}
+          className="form-control"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+        >
           {RESOURCE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
@@ -40,8 +48,9 @@ export function ResourceForm({ onSubmit }) {
         </select>
       </div>
       <div className="form-group">
-        <label>Capacidade (pessoas)</label>
+        <label htmlFor={`${id}-capacity`}>Capacidade (pessoas)</label>
         <input
+          id={`${id}-capacity`}
           type="number"
           min="1"
           className="form-control"

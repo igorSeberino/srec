@@ -1,4 +1,9 @@
+// A regiao viva fica sempre montada: leitores de tela so anunciam mudancas
+// em regioes que ja existiam no DOM antes do texto aparecer.
 export function Feedback({ message }) {
-  if (!message.text) return null;
-  return <div className={`alert alert-${message.type}`}>{message.text}</div>;
+  return (
+    <div role="alert" aria-live="assertive" aria-atomic="true">
+      {message.text && <div className={`alert alert-${message.type}`}>{message.text}</div>}
+    </div>
+  );
 }

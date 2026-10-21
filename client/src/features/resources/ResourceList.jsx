@@ -20,6 +20,7 @@ export function ResourceList({ resources, loading, onDelete }) {
               className="btn-outline-danger"
               onClick={() => onDelete(res.id)}
               title="Excluir Espaço"
+              aria-label={`Excluir espaço ${res.name}`}
             >
               <Trash2 size={16} />
             </button>
