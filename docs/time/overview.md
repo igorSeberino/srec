@@ -32,7 +32,8 @@ decide o que fica de fora e defende a decisão no pitch. Dono do
 
 **QA (Igor).** **Aprova todos os PRs do time** — é o que a rubrica cobra em
 "Pull Requests aprovados pelo QA". Dono da suíte de testes de integração, dos
-testes de domínio e do roteiro de regressão manual. Bloqueia merge quando a
+testes de domínio e do [roteiro de regressão manual](../qa/roteiro-regressao.md)
+([plano de testes](../qa/plano-de-testes.md)). Bloqueia merge quando a
 Definition of Done não é cumprida.
 
 Igor acumula os dois papéis, o que cria um conflito de interesse real: o PO
