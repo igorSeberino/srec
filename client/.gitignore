@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Relatorio de cobertura (npm run test:coverage)
+coverage

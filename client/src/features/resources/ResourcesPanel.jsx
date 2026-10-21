@@ -1,4 +1,5 @@
 import { api } from '../../services/api';
+import { cascadeWarning } from './cascadeWarning';
 import { ResourceForm } from './ResourceForm';
 import { ResourceList } from './ResourceList';
 
@@ -9,10 +10,10 @@ export function ResourcesPanel({
   reloadReservations,
   notify,
 }) {
-  const handleCreate = async (data) => {
+  const save = async (action, successText) => {
     try {
-      await api.createResource(data);
-      notify('Espaço cadastrado com sucesso!');
+      await action();
+      notify(successText);
       reloadResources();
       return true;
     } catch (err) {
@@ -21,10 +22,25 @@ export function ResourcesPanel({
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Deseja realmente remover este espaço?')) return;
+  const handleCreate = (data) =>
+    save(() => api.createResource(data), 'Espaço cadastrado com sucesso!');
+
+  // Corpo completo: o PUT atual exige todos os campos (ver BE-05).
+  const handleUpdate = (id, data) =>
+    save(() => api.updateResource(id, data), 'Espaço atualizado com sucesso!');
+
+  const handleDelete = async (resource) => {
+    // Conta na hora, com dados frescos: sem saber o impacto, nao exclui.
+    let current;
     try {
-      await api.deleteResource(id);
+      current = await api.getReservations();
+    } catch (err) {
+      notify(`Não foi possível verificar as reservas do espaço: ${err.message}`, 'error');
+      return;
+    }
+    if (!window.confirm(cascadeWarning(resource, current))) return;
+    try {
+      await api.deleteResource(resource.id);
       notify('Espaço removido com sucesso!');
       // ON DELETE CASCADE remove as reservas do espaço junto.
       reloadResources();
@@ -42,7 +58,12 @@ export function ResourcesPanel({
       </div>
       <div className="card">
         <h3 className="card-title">Espaços Cadastrados</h3>
-        <ResourceList resources={resources} loading={loading} onDelete={handleDelete} />
+        <ResourceList
+          resources={resources}
+          loading={loading}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   );

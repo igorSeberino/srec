@@ -1,12 +1,18 @@
 import { useId, useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Save } from 'lucide-react';
 import { useSubmitLock } from '../../hooks/useSubmitLock';
 import { RESOURCE_TYPES } from './resourceTypes';
 
-export function ResourceForm({ onSubmit }) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('workstation');
-  const [capacity, setCapacity] = useState(1);
+const EMPTY = { name: '', type: 'workstation', capacity: 1 };
+
+// Sem `initialValues` e um formulario de cadastro (limpa ao salvar);
+// com `initialValues` e de edicao (mantem os valores e oferece Cancelar).
+export function ResourceForm({ initialValues, onSubmit, onCancel }) {
+  const isEdit = Boolean(initialValues);
+  const start = initialValues ?? EMPTY;
+  const [name, setName] = useState(start.name);
+  const [type, setType] = useState(start.type);
+  const [capacity, setCapacity] = useState(start.capacity);
 
   const { submitting, run } = useSubmitLock();
   const id = useId();
@@ -15,12 +21,15 @@ export function ResourceForm({ onSubmit }) {
     e.preventDefault();
     run(async () => {
       const ok = await onSubmit({ name, type, capacity: Number(capacity) });
-      if (ok) {
-        setName('');
-        setCapacity(1);
+      if (ok && !isEdit) {
+        setName(EMPTY.name);
+        setCapacity(EMPTY.capacity);
       }
     });
   };
+
+  const Icon = isEdit ? Save : PlusCircle;
+  const label = isEdit ? 'Salvar Alterações' : 'Cadastrar Espaço';
 
   return (
     <form onSubmit={handleSubmit}>
@@ -63,9 +72,16 @@ export function ResourceForm({ onSubmit }) {
           required
         />
       </div>
-      <button type="submit" className="btn btn-primary" disabled={submitting}>
-        <PlusCircle size={18} /> {submitting ? 'Enviando...' : 'Cadastrar Espaço'}
-      </button>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          <Icon size={18} /> {submitting ? 'Enviando...' : label}
+        </button>
+        {isEdit && (
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+      </div>
     </form>
   );
 }

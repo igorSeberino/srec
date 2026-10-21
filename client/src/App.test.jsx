@@ -84,7 +84,8 @@ describe('Espaços', () => {
     await user.click(screen.getAllByTitle('Excluir Espaço')[0]);
     expect(api.deleteResource).toHaveBeenCalledWith(1);
     expect(await screen.findByText('Espaço removido com sucesso!')).toBeInTheDocument();
-    expect(api.getReservations).toHaveBeenCalledTimes(2);
+    // carga inicial + contagem antes do diálogo + recarga após o cascade
+    expect(api.getReservations).toHaveBeenCalledTimes(3);
   });
 
   it('não remove espaço se o usuário cancelar o diálogo', async () => {
