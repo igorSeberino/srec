@@ -153,8 +153,8 @@ regras do GitHub se combinam de forma desagradável aqui:
 Agora juntando com a nossa realidade: **o Igor é dono do repositório e é o QA
 aprovador.** Se `CODEOWNERS` tivesse só a linha `* @igorSeberino`, todo PR em
 que o Igor é o autor ficaria **impossível de mesclar** — ele é o único dono, e
-não pode se auto-aprovar. Os PRs do Igor são QA-01, QA-02, QA-03 e QA-04:
-quatro das 26 issues, incluindo as duas que sustentam o pitch.
+não pode se auto-aprovar. Os PRs do Igor são QA-01, QA-02, QA-03 e QA-04
+(além de ONB-01 e AUD-01), incluindo as duas issues que sustentam o pitch.
 
 A saída adotada tem duas partes.
 
@@ -169,14 +169,21 @@ de qualquer um dos donos listados satisfaz o portão), mas cada área da N2 tem
 | BE-01..BE-08 (autor Adrian) | `/server/` | `@igorSeberino @adrian-cesar` | só o **Igor** — o Adrian é o autor |
 | FE-01..FE-05 (autor Renato) | `/client/` | `@igorSeberino @RenatoColin` | só o **Igor** |
 | OPS-01..OPS-05 (autor Gabriel) | `/.github/`, compose | `@igorSeberino @gabrielcarvallho` | só o **Igor** |
-| REQ-01..REQ-04 (autor Diego) | `/docs/` | `@igorSeberino @Diegonessler` | só o **Igor** |
+| REQ-01..REQ-04 (autor Diego) | `/docs/` | `@igorSeberino @adrian-cesar` | só o **Igor** (regra escrita: o Adrian só aprova PR do Igor) |
 | QA-01, QA-02 (autor Igor) | `/server/` | `@igorSeberino @adrian-cesar` | o **Adrian** |
-| QA-03, QA-04 (autor Igor) | `/docs/` | `@igorSeberino @Diegonessler` | o **Diego** |
+| QA-03, QA-04 (autor Igor) | `/docs/` | `@igorSeberino @adrian-cesar` | o **Adrian** |
 
-Ou seja: a regra "o QA aprova tudo" é satisfeita **tecnicamente** em 22 dos 26
-PRs, e nos 4 PRs do próprio QA o segundo dono da área assume a revisão — o que é
-o comportamento correto, não um furo: alguém tem que revisar o trabalho do
-revisor.
+Ou seja: a regra "o QA aprova tudo" é satisfeita nos PRs dos outros quatro
+integrantes, e nos PRs do próprio QA o **revisor substituto, Adrian**, assume a
+revisão — o que é o comportamento correto, não um furo: alguém tem que revisar o
+trabalho do revisor. Há um único substituto (e não "o segundo dono de cada
+área") para que a exceção tenha um responsável só, auditável pelo nome do
+aprovador.
+
+Efeito colateral conhecido: em `/docs/` o Adrian também é dono, então o GitHub
+aceitaria a aprovação dele num PR de REQ. A regra escrita em
+`docs/time/fluxo-tbd.md` proíbe isso — a substituição vale só para PRs de
+autoria do Igor — e o nome do aprovador fica no histórico do PR.
 
 **Parte 2 — `enforce_admins: false`, deliberadamente.** Resta um caso que ainda
 trava: um PR do Igor que toque **apenas** arquivos cobertos pela linha `*`
@@ -285,7 +292,9 @@ por quatro para automatizar um `gh issue edit`.
 # 2. Dentro de uma linha a semântica é OU: a aprovação de qualquer um dos donos
 #    satisfaz o portão. Como cada área da N2 tem exatamente um autor, e autor
 #    não aprova o próprio PR, na prática quem aprova é o QA — exceto nos PRs do
-#    próprio QA, onde o segundo dono da área assume a revisão.
+#    próprio QA, aprovados pelo revisor substituto (@adrian-cesar). Por isso o
+#    Adrian é dono de /server/ e de /docs/, as áreas que os PRs do QA tocam.
+#    Regra escrita: aprovação do Adrian só vale em PR de autoria do Igor.
 #
 # Dono de código precisa ter permissão de escrita no repositório. Confira com:
 #   gh api /repos/igorSeberino/srec/codeowners/errors
@@ -300,8 +309,9 @@ por quatro para automatizar um `gh issue edit`.
 # Frontend React + Vite
 /client/                    @igorSeberino @RenatoColin
 
-# Requisitos, arquitetura, auditoria, specs e handoff
-/docs/                      @igorSeberino @Diegonessler
+# Requisitos, arquitetura, auditoria, specs e handoff.
+# @adrian-cesar está aqui como revisor substituto dos PRs do QA (QA-03, QA-04).
+/docs/                      @igorSeberino @adrian-cesar
 
 # Automação, CI, templates e ambiente reproduzível.
 # Vem depois de /server/ e /client/ de propósito: os Dockerfiles são do DevOps,
@@ -376,7 +386,8 @@ marcada por otimismo é pior do que caixa vazia.
 
 ## Para o QA (@igorSeberino)
 
-Preenchido pelo revisor, não pelo autor.
+Preenchido pelo revisor, não pelo autor. Se o autor é o próprio Igor, quem
+preenche e aprova é o revisor substituto, @adrian-cesar.
 
 - [ ] Os 7 itens acima foram conferidos, não apenas lidos.
 - [ ] O diff não traz arquivo fora do escopo da issue.
@@ -1021,7 +1032,7 @@ gh pr view <n> --json reviewRequests --jq '.reviewRequests[].login'
 | `server/src/app.js` | `igorSeberino`, `adrian-cesar` |
 | `client/src/App.jsx` | `igorSeberino`, `RenatoColin` |
 | `.github/workflows/ci.yml` | `igorSeberino`, `gabrielcarvallho` |
-| `docs/produto/requisitos.md` | `igorSeberino`, `Diegonessler` |
+| `docs/produto/requisitos.md` | `igorSeberino`, `adrian-cesar` |
 | `README.md` | `igorSeberino` |
 
 O autor nunca aparece na própria lista — é o GitHub que o remove, e é a
@@ -1117,7 +1128,8 @@ comm -23 /tmp/exigidos.txt /tmp/publicados.txt
 * [ ] `.github/CODEOWNERS` existe, tem `@igorSeberino` em **todas** as linhas e
       em primeiro lugar, e os donos por pasta são `/server/` → `@adrian-cesar`,
       `/client/` → `@RenatoColin`, `/.github/` e os arquivos de Docker →
-      `@gabrielcarvallho`, `/docs/` → `@Diegonessler`.
+      `@gabrielcarvallho`, `/docs/` → `@adrian-cesar` (revisor substituto dos
+      PRs do QA).
 * [ ] `gh api /repos/igorSeberino/srec/codeowners/errors` devolve lista de erros
       **vazia**.
 * [ ] Os quatro colaboradores têm permissão `push`, conferido por
@@ -1257,8 +1269,8 @@ Conventional Commits.
 Leia a seção "Decisão" da spec antes de aprovar. Dois pontos que afetam você
 diretamente:
 1. Você é dono de tudo via `*`, e os PRs de QA-01..QA-04 serão aprovados pelo
-   segundo dono da área tocada (Adrian em /server/, Diego em /docs/) — porque o
-   GitHub não permite auto-aprovação.
+   revisor substituto, Adrian (dono de /server/ e /docs/) — porque o GitHub não
+   permite auto-aprovação.
 2. `enforce_admins` está em `false` de propósito, para PRs seus que toquem só
    arquivos da raiz. O bypass fica registrado na timeline do PR. A regra de uso
    está em docs/time/fluxo-tbd.md.

@@ -140,6 +140,8 @@ verificado"** e vira pendência, não aprovação.
 **Este comando produz o parecer, não a aprovação.** Quem aprova no GitHub é o
 **Igor (`@igorSeberino`), no papel de QA** — é literalmente o item de 1,5 ponto
 da rubrica ("Pull Requests aprovados pelo QA"), e é ato humano, com clique dele.
+Quando o autor do PR é o próprio Igor, quem aprova é o revisor substituto,
+**Adrian (`@adrian-cesar`)**.
 
 Nenhum `gh pr review --approve`, nenhum `gh pr merge`, nenhum `gh pr edit` sai
 daqui — `gh pr merge` está inclusive na lista `deny` de `.claude/settings.json`.

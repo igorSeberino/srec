@@ -82,7 +82,9 @@ Os papéis rodam a cada entrega da disciplina. Nesta:
 | [Diego Nessler](https://github.com/Diegonessler) | Engenheiro de Requisitos |
 
 A Matriz RACI completa está em [`docs/time/overview.md`](docs/time/overview.md).
-O QA aprova todos os Pull Requests.
+O QA aprova todos os Pull Requests. A exceção são os PRs do próprio QA: o GitHub
+não permite autoaprovação, e esses PRs são aprovados pelo revisor substituto,
+Adrian (`@adrian-cesar`).
 
 Na N1 este sistema foi construído por Maria Eduarda Huida, Lucas Giovani Fruck
 e Gustavo José Paulo, do grupo MAGUGI.

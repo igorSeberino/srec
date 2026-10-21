@@ -16,9 +16,9 @@ Isso vale 1,5 ponto direto da rubrica: "uso correto de branches, Pull Requests
 
 | Pessoa | GitHub | Papel |
 |---|---|---|
-| Igor Thiago Seberino | `@igorSeberino` | **Product Owner + QA** — prioriza o backlog e **aprova todos os PRs** |
+| Igor Thiago Seberino | `@igorSeberino` | **Product Owner + QA** — prioriza o backlog e **aprova todos os PRs**, exceto os próprios |
 | Gabriel Carvalho | `@gabrielcarvallho` | DevOps |
-| Adrian Cesar Gonçalves | `@adrian-cesar` | Backend |
+| Adrian Cesar Gonçalves | `@adrian-cesar` | Backend — e **revisor substituto**: aprova os PRs de autoria do Igor |
 | Renato Colin Neto | `@RenatoColin` | Frontend |
 | Diego Nessler | `@Diegonessler` | Engenheiro de Requisitos |
 
@@ -113,6 +113,10 @@ Antes de pedir a revisão humana, rode o subagent `qa-reviewer` sobre a branch
 (`/revisar-pr <número>`) e endereçe os achados. Chegar no QA humano com
 não-conformidade óbvia queima o ciclo de 2 dias.
 
+**PR do próprio QA:** quando o autor é o Igor, a aprovação do item 1 é do
+revisor substituto, **Adrian (`@adrian-cesar`)**. Vale só para PRs de autoria
+do Igor; em qualquer outro PR, a aprovação do Adrian não substitui a do QA.
+
 Ninguém aprova o próprio PR. Ninguém mergeia sem aprovação, nem "porque é
 pequeno".
 
@@ -179,11 +183,12 @@ gh pr create --base main --title "<título exato da issue>" --body-file <corpo>
 ```
 
 Título = título da issue. Corpo de `templates/pr-body.md`, com `Closes #N`.
-Marque `@igorSeberino` como reviewer.
+Marque `@igorSeberino` como reviewer. Se você **é** o Igor, marque
+`@adrian-cesar` (revisor substituto).
 
 ### 8. Merge
 
-Depois da aprovação do QA e da CI verde, merge em `main`. Então limpe:
+Depois da aprovação do QA (ou do substituto, em PR do QA) e da CI verde, merge em `main`. Então limpe:
 
 ```bash
 git checkout main

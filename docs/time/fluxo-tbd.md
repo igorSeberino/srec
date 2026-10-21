@@ -133,6 +133,12 @@ refatoração mecânica, quebre.
 Merge exige **1 aprovação do QA (@igorSeberino) + CI verde**. Os dois, não um
 dos dois.
 
+**PR do próprio QA.** O GitHub não deixa o autor aprovar o próprio PR. Quando o
+autor é o Igor (ONB-01, AUD-01, QA-01..QA-04), quem aprova é o revisor
+substituto, **@adrian-cesar**. A substituição vale só para PRs de autoria do
+Igor; em qualquer outro PR, aprovação do Adrian não substitui a do QA. Merge
+sem nenhuma aprovação registrada não é exceção aceita, mesmo para o QA.
+
 O QA confronta o diff com a spec da issue, verifica a DoD, confere o padrão de
 commit e checa se a cobertura caiu. `/revisar-pr <número>` produz o parecer com
 o subagent `qa-reviewer` — o parecer é insumo, a aprovação é humana.
@@ -161,7 +167,7 @@ Processo que depende de todo mundo lembrar não é processo. Depois de
 * `main` recusa push direto;
 * PR sem aprovação não mergeia;
 * PR com CI vermelha não mergeia;
-* `CODEOWNERS` puxa o QA como revisor automaticamente;
+* `CODEOWNERS` puxa o QA como revisor automaticamente (e o revisor substituto nos PRs do QA);
 * título de PR fora do Conventional Commits falha na CI.
 
 Até lá, vale a disciplina — e vale lembrar que o grupo anterior também tinha

@@ -682,9 +682,8 @@ fazer nenhuma pergunta ao autor.
 Aceite: zero perguntas. Cada pergunta feita é um passo mal escrito, e o conserto
 é no roteiro, não na explicação verbal.
 
-Candidato natural: Diego (Engenharia de Requisitos), que precisa conhecer o
-comportamento real do sistema para fechar as 12 divergências de REQ-01 — o
-mesmo esforço serve às duas specs.
+Candidato natural: Gabriel (DevOps), que não escreveu o roteiro nem tocou a
+interface na N2 — é o leitor mais próximo de alguém de fora do projeto.
 
 ### Caso 3 — o registro de execução compara
 
@@ -693,7 +692,7 @@ em dois arquivos, e comparar:
 
 ```bash
 diff docs/qa/execucoes/2026-10-21-antes-igor.md \
-     docs/qa/execucoes/2026-10-21-antes-diego.md
+     docs/qa/execucoes/2026-10-21-antes-gabriel.md
 ```
 
 Aceite: as diferenças ficam restritas ao cabeçalho (executor, hora, navegador).
@@ -786,8 +785,8 @@ Aceite: os três vereditos saem do documento sem interpretação.
       autor.
 * [ ] Todos os comandos `curl` do bloco C rodam copiados e colados, sem ajuste.
 * [ ] `docs/qa/` aparece no mapa de documentação do `README.md`.
-* [ ] PR aprovado por `@igorSeberino` (QA) — e, como este PR é do próprio QA,
-      pelo segundo dono de `/docs/` conforme `.github/CODEOWNERS` de OPS-05.
+* [ ] PR aprovado por `@adrian-cesar` — revisor substituto, porque este PR é do
+      próprio QA (ver `docs/time/fluxo-tbd.md`).
 
 ## Passo a passo TBD
 

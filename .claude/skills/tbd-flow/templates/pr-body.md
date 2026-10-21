@@ -65,7 +65,7 @@ Se algo da rotina foi pulado, registre aqui — não deixe implícito. -->
 - [ ] Nenhum segredo no diff (`DATABASE_URL` real, senha, token)
 - [ ] `docs/auditoria/` atualizado com o número depois, se havia métrica
 - [ ] `docs/arquitetura/` atualizado, se mudou schema, contrato de API ou estrutura
-- [ ] Aprovado por `@igorSeberino` (QA) — requisito da rubrica da N2
+- [ ] Aprovado por `@igorSeberino` (QA) — requisito da rubrica da N2. Se o autor é o próprio Igor: aprovado por `@adrian-cesar` (revisor substituto)
 - [ ] CI verde (`.github/workflows/ci.yml`)
 
 Closes #{número}

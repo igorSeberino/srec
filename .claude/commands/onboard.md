@@ -22,7 +22,8 @@ diagnóstico está em `docs/auditoria/`; o trabalho está quebrado em 26 specs e
 `docs/specs/<slug>/implementacao.md`, uma por issue.
 
 Regra que organiza tudo o que você vai fazer aqui: **nada entra em `main` sem
-spec, sem teste e sem aprovação do QA (Igor, `@igorSeberino`).**
+spec, sem teste e sem aprovação do QA (Igor, `@igorSeberino`).** PR do próprio
+Igor é aprovado pelo revisor substituto, Adrian (`@adrian-cesar`).
 
 ## 1. Checar o ambiente
 
