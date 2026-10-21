@@ -1,16 +1,54 @@
-# React + Vite
+# SREC — client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend React + Vite do Sistema de Reservas & Coworking.
 
-Currently, two official plugins are available:
+## Rodando
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm ci --legacy-peer-deps
+cp .env.example .env.local   # opcional: ajuste a URL da API
+npm run dev
+```
 
-## React Compiler
+## Configuração
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Variável       | Padrão                      | Descrição                          |
+| -------------- | --------------------------- | ---------------------------------- |
+| `VITE_API_URL` | `http://localhost:5000/api` | URL base da API, sem barra no fim. |
 
-## Expanding the Oxlint configuration
+Variáveis `VITE_*` são embutidas no build: mudar a URL exige rodar `npm run build` de novo,
+mas não exige editar código.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Scripts
+
+| Script                  | O que faz                         |
+| ----------------------- | --------------------------------- |
+| `npm run dev`           | Servidor de desenvolvimento       |
+| `npm run build`         | Build de produção em `dist/`      |
+| `npm run lint`          | ESLint (inclui `jsx-a11y`)        |
+| `npm test`              | Testes (Vitest + Testing Library) |
+| `npm run test:coverage` | Testes com relatório de cobertura |
+
+## Estrutura
+
+```
+src/
+  App.jsx            composição da tela (abas + painéis)
+  components/        peças de UI genéricas (Header, Tabs, Feedback)
+  features/
+    resources/       cadastro e lista de espaços
+    reservations/    agendamento e lista de reservas
+  hooks/             estado e carga de dados (useCollection, useFeedback...)
+  services/
+    http.js          único ponto de fetch, parse e tratamento de erro
+    api.js           endpoints da API
+    datetime.js      contrato de horário com a API (ISO 8601 com offset)
+  test/              setup e fixtures dos testes
+```
+
+## Contrato de horário
+
+O `<input type="datetime-local">` entrega o horário local sem fuso. Antes de enviar,
+`toApiDateTime` converte para ISO 8601 em UTC (`2030-01-10T12:00:00.000Z`); na exibição,
+`formatDateTime` converte de volta para o fuso do navegador. Os testes rodam com
+`TZ=America/Sao_Paulo` fixo.

@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock, Trash2, XCircle } from 'lucide-react';
+import { formatDateTime } from '../../services/datetime';
 
 export function ReservationItem({ reservation, resourceName, onStatusChange, onDelete }) {
   const { id, user_name, start_time, end_time, status } = reservation;
@@ -11,9 +12,8 @@ export function ReservationItem({ reservation, resourceName, onStatusChange, onD
           <strong>Responsável:</strong> {user_name}
         </p>
         <p>
-          <Clock size={14} style={{ display: 'inline' }} />{' '}
-          {new Date(start_time).toLocaleString('pt-BR')} até{' '}
-          {new Date(end_time).toLocaleString('pt-BR')}
+          <Clock size={14} style={{ display: 'inline' }} /> {formatDateTime(start_time)} até{' '}
+          {formatDateTime(end_time)}
         </p>
         <span className={`status-tag status-${status}`}>{status}</span>
       </div>

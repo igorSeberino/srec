@@ -1,82 +1,44 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { toApiDateTime } from './datetime';
+import { request } from './http';
 
 export const api = {
   // Resources
-  async getResources() {
-    const res = await fetch(`${API_BASE_URL}/resources`);
-    if (!res.ok) throw new Error('Falha ao carregar recursos');
-    return res.json();
-  },
+  getResources: () => request('/resources', { fallback: 'Falha ao carregar recursos' }),
 
-  async createResource(data) {
-    const res = await fetch(`${API_BASE_URL}/resources`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Erro ao criar recurso');
-    }
-    return res.json();
-  },
+  createResource: (data) =>
+    request('/resources', { method: 'POST', body: data, fallback: 'Erro ao criar recurso' }),
 
-  async updateResource(id, data) {
-    const res = await fetch(`${API_BASE_URL}/resources/${id}`, {
+  updateResource: (id, data) =>
+    request(`/resources/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Erro ao atualizar recurso');
-    }
-    return res.json();
-  },
+      body: data,
+      fallback: 'Erro ao atualizar recurso',
+    }),
 
-  async deleteResource(id) {
-    const res = await fetch(`${API_BASE_URL}/resources/${id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error('Erro ao deletar recurso');
-    return res.json();
-  },
+  deleteResource: (id) =>
+    request(`/resources/${id}`, { method: 'DELETE', fallback: 'Erro ao deletar recurso' }),
 
   // Reservations
-  async getReservations() {
-    const res = await fetch(`${API_BASE_URL}/reservations`);
-    if (!res.ok) throw new Error('Falha ao carregar reservas');
-    return res.json();
-  },
+  getReservations: () => request('/reservations', { fallback: 'Falha ao carregar reservas' }),
 
-  async createReservation(data) {
-    const res = await fetch(`${API_BASE_URL}/reservations`, {
+  createReservation: (data) =>
+    request('/reservations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Erro ao criar reserva');
-    }
-    return res.json();
-  },
+      body: {
+        ...data,
+        start_time: toApiDateTime(data.start_time),
+        end_time: toApiDateTime(data.end_time),
+      },
+      fallback: 'Erro ao criar reserva',
+    }),
 
-  async updateReservationStatus(id, status) {
-    const res = await fetch(`${API_BASE_URL}/reservations/${id}/status`, {
+  updateReservationStatus: (id, status) =>
+    request(`/reservations/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    if (!res.ok) throw new Error('Erro ao atualizar status');
-    return res.json();
-  },
+      body: { status },
+      fallback: 'Erro ao atualizar status',
+    }),
 
-  async deleteReservation(id) {
-    const res = await fetch(`${API_BASE_URL}/reservations/${id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error('Erro ao cancelar reserva');
-    return res.json();
-  },
+  deleteReservation: (id) =>
+    request(`/reservations/${id}`, { method: 'DELETE', fallback: 'Erro ao cancelar reserva' }),
 };

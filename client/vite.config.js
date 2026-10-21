@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',
+    // Fuso fixo: os testes de horario nao podem depender da maquina (BE-07).
+    env: { TZ: 'America/Sao_Paulo' },
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{js,jsx}'],
