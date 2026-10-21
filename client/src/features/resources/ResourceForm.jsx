@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
+import { useSubmitLock } from '../../hooks/useSubmitLock';
 import { RESOURCE_TYPES } from './resourceTypes';
 
 export function ResourceForm({ onSubmit }) {
@@ -7,15 +8,18 @@ export function ResourceForm({ onSubmit }) {
   const [type, setType] = useState('workstation');
   const [capacity, setCapacity] = useState(1);
 
+  const { submitting, run } = useSubmitLock();
   const id = useId();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const ok = await onSubmit({ name, type, capacity: Number(capacity) });
-    if (ok) {
-      setName('');
-      setCapacity(1);
-    }
+    run(async () => {
+      const ok = await onSubmit({ name, type, capacity: Number(capacity) });
+      if (ok) {
+        setName('');
+        setCapacity(1);
+      }
+    });
   };
 
   return (
@@ -59,8 +63,8 @@ export function ResourceForm({ onSubmit }) {
           required
         />
       </div>
-      <button type="submit" className="btn btn-primary">
-        <PlusCircle size={18} /> Cadastrar Espaço
+      <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <PlusCircle size={18} /> {submitting ? 'Enviando...' : 'Cadastrar Espaço'}
       </button>
     </form>
   );

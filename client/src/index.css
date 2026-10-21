@@ -154,6 +154,21 @@ header {
   background-color: #2563eb;
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-control[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+.field-error {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: #991b1b;
+}
+
 .btn-danger {
   background-color: #ef4444;
   color: white;
