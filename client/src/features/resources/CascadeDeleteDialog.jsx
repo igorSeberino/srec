@@ -67,8 +67,9 @@ export function CascadeDeleteDialog({
               checked={acknowledged}
               onChange={(event) => onAcknowledge(event.target.checked)}
             />
-            Entendo que {plural(impact.total, 'reserva')} serão apagadas e não poderão ser
-            recuperadas.
+            {impact.total === 1
+              ? 'Entendo que 1 reserva será apagada e não poderá ser recuperada.'
+              : `Entendo que ${impact.total} reservas serão apagadas e não poderão ser recuperadas.`}
           </label>
         </>
       )}
