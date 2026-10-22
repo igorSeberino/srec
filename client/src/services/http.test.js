@@ -89,7 +89,10 @@ describe('camada de API', () => {
       end_time: '2026-10-21T15:00',
     });
     const sent = JSON.parse(fetch.mock.calls[0][1].body);
-    expect(sent.start_time).toBe('2026-10-21T14:00:00-03:00');
-    expect(sent.end_time).toBe('2026-10-21T15:00:00-03:00');
+    // Any timezone: the offset is present and it is the same instant the user
+    // typed as local time (in Sao Paulo this is '2026-10-21T14:00:00-03:00').
+    expect(sent.start_time).toMatch(/^2026-10-21T14:00:00[+-]\d{2}:\d{2}$/);
+    expect(sent.end_time).toMatch(/^2026-10-21T15:00:00[+-]\d{2}:\d{2}$/);
+    expect(new Date(sent.start_time).getTime()).toBe(new Date('2026-10-21T14:00').getTime());
   });
 });
