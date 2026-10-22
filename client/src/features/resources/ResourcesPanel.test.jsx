@@ -100,7 +100,9 @@ describe('ResourcesPanel — aviso de cascata (BUG-06)', () => {
     await openDelete(user);
 
     const dialog = await screen.findByRole('dialog', { name: 'Remover "Sala Alpha"?' });
-    expect(await within(dialog).findByText(/3 reservas/)).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText('3 reservas', { selector: 'strong' })
+    ).toBeInTheDocument();
     expect(within(dialog).getByText(/agendada\(s\) para o futuro/)).toHaveTextContent(/^2/);
     expect(within(dialog).getByText(/Bruno, Carla/)).toBeInTheDocument();
     expect(actions.fetchReservations).toHaveBeenCalledTimes(1);
