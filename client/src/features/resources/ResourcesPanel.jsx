@@ -15,7 +15,7 @@ export function ResourcesPanel({ resources, loading, onCreate, onDelete, onSucce
 
   return (
     <div className="grid grid-2">
-      <ResourceForm onCreate={onCreate} onSuccess={onSuccess} onError={onError} />
+      <ResourceForm onSubmit={onCreate} onSuccess={onSuccess} onError={onError} />
       <ResourceList resources={resources} loading={loading} onDelete={handleDelete} />
     </div>
   );

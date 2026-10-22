@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Save } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { FormField } from '../../components/FormField';
 import { SubmitButton } from '../../components/SubmitButton';
@@ -9,18 +9,29 @@ import { useSubmit } from '../../hooks/useSubmit';
 import { hasErrors, serverFieldErrors } from '../../lib/validation';
 import { RESOURCE_ERROR_FIELDS, validateResource } from './validation';
 
-// Literal ids (not useId) so tests and DevTools can reference them; FE-05
-// passes its own idPrefix to render an edit form next to this one.
-export function ResourceForm({ idPrefix = 'resource-form', onCreate, onSuccess, onError }) {
+// One form for both modes (FE-05): create by default, edit with
+// mode="edit" + initialValues. Literal ids (not useId) so tests and DevTools
+// can reference them; idPrefix keeps both forms in the DOM without clashes.
+export function ResourceForm({
+  idPrefix = 'resource-form',
+  mode = 'create',
+  initialValues = null,
+  onSubmit,
+  onCancel,
+  onSuccess,
+  onError,
+}) {
+  const isEdit = mode === 'edit';
+  const title = isEdit ? 'Editar Espaço' : 'Novo Espaço';
   const ID = {
     name: `${idPrefix}-name`,
     type: `${idPrefix}-type`,
     capacity: `${idPrefix}-capacity`,
   };
 
-  const [name, setName] = useState('');
-  const [type, setType] = useState(RESOURCE_TYPE.WORKSTATION);
-  const [capacity, setCapacity] = useState(1);
+  const [name, setName] = useState(initialValues?.name ?? '');
+  const [type, setType] = useState(initialValues?.type ?? RESOURCE_TYPE.WORKSTATION);
+  const [capacity, setCapacity] = useState(initialValues?.capacity ?? 1);
   const [errors, setErrors] = useState({});
 
   const { isSubmitting, submit } = useSubmit(async () => {
@@ -30,7 +41,8 @@ export function ResourceForm({ idPrefix = 'resource-form', onCreate, onSuccess, 
     if (hasErrors(clientErrors)) return; // no request goes out
 
     try {
-      await onCreate(values);
+      await onSubmit(values);
+      if (isEdit) return; // the panel closes the edit form and reports success
       setName('');
       setCapacity(1);
       onSuccess('Espaço cadastrado com sucesso!');
@@ -41,9 +53,9 @@ export function ResourceForm({ idPrefix = 'resource-form', onCreate, onSuccess, 
   });
 
   return (
-    <Card title="Novo Espaço">
+    <Card title={title}>
       {/* noValidate: our messages replace the browser's native bubbles. */}
-      <form onSubmit={submit} noValidate>
+      <form onSubmit={submit} noValidate aria-label={title}>
         <FormField id={ID.name} label="Nome do Espaço / Estação" error={errors.name}>
           <input
             {...fieldProps(ID.name, errors.name)}
@@ -74,12 +86,19 @@ export function ResourceForm({ idPrefix = 'resource-form', onCreate, onSuccess, 
             required
           />
         </FormField>
-        <SubmitButton
-          isSubmitting={isSubmitting}
-          idleLabel="Cadastrar Espaço"
-          busyLabel="Cadastrando..."
-          icon={<PlusCircle size={18} />}
-        />
+        <div className="dialog-actions">
+          {isEdit && (
+            <button type="button" className="btn" onClick={onCancel} disabled={isSubmitting}>
+              Cancelar
+            </button>
+          )}
+          <SubmitButton
+            isSubmitting={isSubmitting}
+            idleLabel={isEdit ? 'Salvar alterações' : 'Cadastrar Espaço'}
+            busyLabel={isEdit ? 'Salvando...' : 'Cadastrando...'}
+            icon={isEdit ? <Save size={18} /> : <PlusCircle size={18} />}
+          />
+        </div>
       </form>
     </Card>
   );

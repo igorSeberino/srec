@@ -2,7 +2,16 @@ import { Card } from '../../components/Card';
 import { EmptyState } from '../../components/EmptyState';
 import { ResourceListItem } from './ResourceListItem';
 
-export function ResourceList({ resources, loading, onDelete }) {
+export function ResourceList({
+  resources,
+  loading,
+  editingId,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDelete,
+  onError,
+}) {
   return (
     <Card title="Espaços Cadastrados">
       <EmptyState
@@ -12,7 +21,16 @@ export function ResourceList({ resources, loading, onDelete }) {
       />
       <div className="item-list">
         {resources.map((resource) => (
-          <ResourceListItem key={resource.id} resource={resource} onDelete={onDelete} />
+          <ResourceListItem
+            key={resource.id}
+            resource={resource}
+            isEditing={resource.id === editingId}
+            onStartEdit={onStartEdit}
+            onCancelEdit={onCancelEdit}
+            onSaveEdit={onSaveEdit}
+            onDelete={onDelete}
+            onError={onError}
+          />
         ))}
       </div>
     </Card>
