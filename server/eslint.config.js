@@ -1,5 +1,5 @@
-const js = require("@eslint/js");
-const prettier = require("eslint-config-prettier");
+const js = require('@eslint/js');
+const prettier = require('eslint-config-prettier');
 
 module.exports = [
   js.configs.recommended,
@@ -8,20 +8,25 @@ module.exports = [
       ecmaVersion: 2022,
       sourceType: "commonjs",
       globals: {
-        process: "readonly",
-        console: "readonly",
-        require: "readonly",
-        module: "readonly",
-        jest: "readonly",
-        describe: "readonly",
-        it: "readonly",
-        expect: "readonly",
-        afterEach: "readonly"
+        process: 'readonly',
+        console: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        __dirname: 'readonly',
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly'
       }
     },
     rules: {
-      "no-unused-vars": "warn",
-      "no-console": "off"
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off'
     }
   },
   prettier

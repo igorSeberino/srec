@@ -7,27 +7,24 @@ const createTables = async () => {
       name VARCHAR(100) NOT NULL,
       type VARCHAR(50) NOT NULL, -- 'workstation' or 'meeting_room'
       capacity INTEGER NOT NULL DEFAULT 1,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS reservations (
       id SERIAL PRIMARY KEY,
       resource_id INTEGER REFERENCES resources(id) ON DELETE CASCADE,
       user_name VARCHAR(100) NOT NULL,
-      start_time TIMESTAMP NOT NULL,
-      end_time TIMESTAMP NOT NULL,
-      status VARCHAR(20) DEFAULT 'scheduled', -- 'scheduled', 'cancelled', 'completed'
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      start_time TIMESTAMPTZ NOT NULL,
+      end_time TIMESTAMPTZ NOT NULL,
+      -- Vocabulário definido em src/domain/reservationStatus.js.
+      status VARCHAR(20) DEFAULT 'scheduled',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `;
-  try {
-    await db.query(queryText);
-    console.log('Database tables ensured');
-  } catch (err) {
-    console.error('Error creating tables', err);
-  }
+  await db.query(queryText);
+  console.log('[db] schema garantido');
 };
 
 module.exports = createTables;
