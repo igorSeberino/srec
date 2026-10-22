@@ -87,14 +87,55 @@ O QA aprova todos os Pull Requests.
 Na N1 este sistema foi construído por Maria Eduarda Huida, Lucas Giovani Fruck
 e Gustavo José Paulo, do grupo MAGUGI.
 
-## Como rodar
+## Como Executar o Projeto
 
-> **Nota.** O caminho abaixo são os 7 passos manuais que herdamos. A issue
-> [OPS-01](docs/specs/ops-01-docker-compose-environment/implementacao.md)
-> substitui tudo isso por `docker compose up`. Enquanto ela não estiver
-> mergeada, siga o manual.
+### Opção A — Docker Compose (recomendado)
 
-Pré-requisitos: Node.js 20, PostgreSQL 16, Git.
+Pré-requisito único: **Docker Desktop** (ou Docker Engine + plugin Compose).
+
+```bash
+git clone https://github.com/igorSeberino/srec.git
+cd srec
+docker compose up
+```
+
+É isso. Um comando. Ao final:
+
+| Serviço | URL | Observação |
+|---|---|---|
+| Frontend | <http://localhost:5173> | Vite com hot reload |
+| API | <http://localhost:5000> | responde `SREC Coworking API is running...` |
+| PostgreSQL | `localhost:5432` | usuário `srec`, senha `srec`, banco `srec` |
+
+O `docker compose up` sobe o PostgreSQL, **espera o healthcheck**
+(`pg_isready`) passar e só então inicia o backend. Nenhum `.env` precisa ser
+criado: as variáveis estão em `docker-compose.yml`.
+
+Comandos do dia a dia:
+
+```bash
+docker compose up -d                 # sobe em background
+docker compose logs -f server        # acompanha o log do backend
+docker compose exec server npm test  # roda os testes dentro do container
+docker compose exec postgres psql -U srec -d srec   # abre um psql no banco
+docker compose down                  # para tudo, preservando os dados
+docker compose down -v               # para tudo e APAGA o volume do banco
+docker compose up --build            # reconstrói as imagens após mudar dependências
+```
+
+O hot reload funciona nos dois lados: `./server/src` e `./client/src` são
+montados no container (`docker-compose.override.yml`), então salvar um
+arquivo reinicia o `nodemon` ou dispara o HMR do Vite sem rebuild.
+
+Para validar o modo de produção (nginx servindo o bundle, sem bind mount):
+
+```bash
+docker compose -f docker-compose.yml up --build
+```
+
+### Opção B — Execução local sem Docker
+
+Mantida para quem já tem PostgreSQL 16 na máquina.
 
 ```bash
 # 1. banco
