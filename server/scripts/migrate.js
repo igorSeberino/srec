@@ -19,7 +19,7 @@ async function run() {
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK');
-        throw new Error(`[migrate] falhou em ${file}: ${err.message}`);
+        throw new Error(`[migrate] falhou em ${file}: ${err.message}`, { cause: err });
       }
     }
     console.log(`[migrate] ${files.length} migração(ões) no diretório.`);

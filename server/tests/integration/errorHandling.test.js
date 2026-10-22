@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/app');
+const app = require('../../src/app')();
 describe('central error handling', () => {
   it('returns a JSON 400 for a malformed identifier', async () => {
     const response = await request(app).get('/api/resources/abc');

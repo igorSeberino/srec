@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_no_overlap;
 ALTER TABLE resources
   ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'America/Sao_Paulo',

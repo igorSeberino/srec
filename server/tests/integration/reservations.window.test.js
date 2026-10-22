@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/app');
+const app = require('../../src/app')();
 const { pool, resetDatabase, createResource } = require('../helpers/testDb');
 describe('reservation window', () => {
   let resource;

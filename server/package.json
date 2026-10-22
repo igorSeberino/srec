@@ -10,7 +10,7 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.js\"",
     "test": "jest --selectProjects unit",
-    "test:integration": "jest --selectProjects integration",
+    "test:integration": "jest --selectProjects integration --runInBand",
     "test:all": "jest",
     "db:migrate": "node scripts/migrate.js"
   },
