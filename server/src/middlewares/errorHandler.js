@@ -2,9 +2,15 @@ const AppError = require('../errors/AppError');
 const logger = require('../utils/logger');
 const { SQLSTATE_TO_HTTP, CONSTRAINT_OVERRIDES } = require('../errors/pgErrorCodes');
 const GENERIC_ERROR = Object.freeze({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' });
+// O express.json() (body-parser) sinaliza o erro em `type` e não traz `code`.
+const BODY_PARSER_ERRORS = Object.freeze({
+  'entity.parse.failed': { statusCode: 400, code: 'INVALID_JSON', message: 'O corpo da requisição não é um JSON válido.' },
+  'entity.too.large': { statusCode: 413, code: 'PAYLOAD_TOO_LARGE', message: 'O corpo da requisição excede o tamanho máximo permitido.' },
+});
 
 const translate = (err) => {
   if (err instanceof AppError) return { statusCode: err.statusCode, code: err.code, message: err.message, details: err.details };
+  if (err && BODY_PARSER_ERRORS[err.type]) return BODY_PARSER_ERRORS[err.type];
   if (err && err.statusCode && err.code && !err.sqlState) return {
     statusCode: err.statusCode,
     code: err.code,
