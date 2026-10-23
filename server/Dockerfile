@@ -23,6 +23,7 @@ FROM base AS production
 RUN npm ci --omit=dev && npm cache clean --force
 COPY src ./src
 COPY migrations ./migrations
+COPY scripts ./scripts
 USER node
 EXPOSE 5000
 CMD ["npm", "run", "start"]
