@@ -159,6 +159,47 @@ git pull origin main
 git branch -d fix/prevent-double-booking
 ```
 
+## Portão do Pull Request
+
+`main` é o único branch longevo e deve ser protegida. A proteção é configuração do
+repositório no GitHub (não vive em arquivo), então os comandos para aplicá-la
+estão em [OPS-05](../specs/ops-05-branch-protection-and-templates/implementacao.md).
+O que ela exige:
+
+| Exigência | Configuração | Por quê |
+|---|---|---|
+| PR obrigatório | `required_pull_request_reviews` | `git push` direto em `main` é rejeitado |
+| 1 aprovação | `required_approving_review_count: 1` | rubrica N2: PRs aprovados pelo QA |
+| Aprovação de dono de código | `require_code_owner_reviews: true` | torna `.github/CODEOWNERS` obrigatório, e não só sugestivo |
+| Aprovação do último push | `require_last_push_approval: true` | commit novo depois do "aprovado" não entra sem revisão |
+| Conversas resolvidas | `required_conversation_resolution: true` | comentário do QA não se resolve com silêncio |
+| CI verde | `required_status_checks` | lista abaixo |
+| Histórico linear | `required_linear_history: true` | squash merge, `git log --oneline` legível para a N3 |
+
+### Checks obrigatórios
+
+Os nomes são os `name:` dos jobs em `.github/workflows/`, copiados exatamente
+(o travessão é `—`, não hífen):
+
+* `Backend — lint, auditoria e testes`
+* `Frontend — lint, formato, testes e build`
+* `Docker — build e smoke test do compose`
+* `Título do PR (Conventional Commits)`
+
+O job `Relatório de qualidade (não bloqueante na fase 1)` não entra na lista, de propósito.
+
+### Mensagem de commit em `main`
+
+Só squash merge, com o título do PR como mensagem do commit. O título é validado
+pela CI (`pr-title.yml`), então todo commit em `main` segue Conventional Commits.
+
+### Bypass de admin
+
+`enforce_admins` fica em `false` por um motivo técnico único: PR cujo autor é o
+único dono de código possível dos arquivos tocados não pode ser aprovado por
+ninguém. Nesse caso, outra pessoa do time registra a aprovação no PR e o motivo
+vai escrito no corpo do PR.
+
 ## O que a automação garante
 
 Processo que depende de todo mundo lembrar não é processo. Depois de

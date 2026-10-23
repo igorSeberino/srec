@@ -128,7 +128,7 @@ que o pitch precisa demonstrar com dados.
 ### Política de registro
 
 Todo atalho, pendência ou *workaround* vira issue com a label
-`débito técnico` **no momento em que é criado**, não no fim da entrega,
+`debito tecnico` **no momento em que é criado**, não no fim da entrega,
 contendo: descrição, motivo do atalho, impacto estimado e proposta de solução.
 
 A N2 herdou débito de outro grupo e vai gerar débito próprio. Os dois entram
