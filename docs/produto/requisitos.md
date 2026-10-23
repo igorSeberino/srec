@@ -11,7 +11,8 @@ catalogadas em
 [`docs/auditoria/divergencias-doc-codigo.md`](../auditoria/divergencias-doc-codigo.md).
 
 As evidências apontam para o código da `main` **depois** da refatoração do
-frontend (FE-01, PR #35, e FE-04, PR #36). O backend está como foi recebido.
+frontend (FE-01, PR #35, e FE-04, PR #36) e da subida em Docker Compose
+(OPS-01, PR #40). O backend está como foi recebido.
 Quando um requisito já mudou de situação por um PR da N2, isso aparece no
 campo **Corrigido na N2**, com a situação original preservada para o relatório
 de antes e depois.
@@ -1175,12 +1176,15 @@ controle, todos no `App.jsx` monolítico.
 **História.** Como novo integrante do time, quero subir banco, API e cliente
 com um comando, para começar a trabalhar sem instalar PostgreSQL na mão.
 
-**Situação.** `não implementado`
+**Situação.** `implementado`
 
-**Evidência.** Não há `Dockerfile` nem `docker-compose.yml` no repositório.
-O `README.md:90-113` exige PostgreSQL instalado na máquina, criação manual do
-banco `srec`, preenchimento manual de `server/.env` e dois terminais, além do
-`--legacy-peer-deps` no cliente.
+**Evidência.** `docker-compose.yml:3-51` declara os três serviços:
+`postgres` com healthcheck `pg_isready` (`:15-20`), `server` que só sobe
+depois do banco saudável (`:35-37`) e `client` publicado em `5173` (`:47-48`).
+As variáveis ficam no próprio compose (`:28-32`), sem `.env` manual
+(`README.md:92-112`). O job `docker-compose-smoke` da CI
+(`.github/workflows/ci.yml:40-66`) constrói as imagens, sobe a stack e
+confere `GET /` e `GET /api/resources` na API e o `id="root"` do cliente.
 
 **Critérios de aceitação.**
 
@@ -1189,7 +1193,15 @@ banco `srec`, preenchimento manual de `server/.env` e dois terminais, além do
 3. O cliente em `localhost:5173` consegue criar uma reserva sem configuração
    adicional.
 
-**Trabalho na N2.** OPS-01.
+O critério 1 é coberto pelo smoke test da CI. O critério 2 é atendido hoje pelo
+`initDb.js`, que cria o schema no boot do `server`; `server/migrations/` ainda
+está vazia e passa a valer com OPS-02. O critério 3 não tem teste automatizado:
+o smoke test só faz `GET`.
+
+**Corrigido na N2.** OPS-01 (PR #40). Situação no código recebido:
+`não implementado` — não havia `Dockerfile` nem `docker-compose.yml`, e o
+`README.md` exigia PostgreSQL local, banco criado à mão, `server/.env`
+preenchido à mão e dois terminais.
 
 ---
 
@@ -1230,20 +1242,20 @@ banco `srec`, preenchimento manual de `server/.env` e dois terminais, além do
 | RNF12 | não implementado | 10 `catch` nos controllers | BE-04 |
 | RNF13 | não implementado | `initDb.js:4-24` | OPS-02 |
 | RNF14 | implementado | `ResourceForm.jsx`, `ReservationForm.jsx`, `IconButton.jsx` | FE-04 (**corrigido**, PR #36) |
-| RNF15 | não implementado | — | OPS-01 |
+| RNF15 | implementado | `docker-compose.yml:3-51` | OPS-01 (**corrigido**, PR #40) |
 
 ## Contagem
 
 | Situação | Recebido (N1) | Hoje (`main`) |
 |---|---|---|
-| `implementado` | 6 (4 RF + 2 RNF) | **8** (5 RF + 3 RNF) |
+| `implementado` | 6 (4 RF + 2 RNF) | **9** (5 RF + 4 RNF) |
 | `implementado com defeito` | 16 (10 RF + 6 RNF) | **14** (9 RF + 5 RNF) |
 | `documentado mas inexistente` | 4 (4 RF) | **4** (4 RF) |
-| `não implementado` | 8 (1 RF + 7 RNF) | **8** (1 RF + 7 RNF) |
+| `não implementado` | 8 (1 RF + 7 RNF) | **7** (1 RF + 6 RNF) |
 | **Total** | **34** (19 RF + 15 RNF) | **34** (19 RF + 15 RNF) |
 
-As duas mudanças entre as colunas são RF18 (BUG-14) e RNF14 (CS-13), ambas
-corrigidas por FE-04. Atualize a coluna "Hoje" no mesmo PR que mudar a
+As três mudanças entre as colunas são RF18 (BUG-14) e RNF14 (CS-13),
+corrigidas por FE-04, e RNF15, entregue por OPS-01. Atualize a coluna "Hoje" no mesmo PR que mudar a
 situação de qualquer requisito.
 
 Leitura para o pitch: dos 34 requisitos que o sistema recebido insinua, **6**
