@@ -43,6 +43,7 @@ recebido falha sob concorrência
 
 * [Relatório de auditoria](docs/auditoria/relatorio-n2.md) — o diagnóstico completo, com o achado principal
 * [Métricas de baseline](docs/auditoria/metricas-baseline.md) — 29 métricas medidas, com os comandos que as reproduzem
+* [Relatório antes/depois](docs/auditoria/relatorio-antes-depois.md) — as 29 métricas medidas de novo no fim da N2, placar de bugs e smells, e o roteiro do pitch
 * [Bugs do Cliente](docs/auditoria/bugs-do-cliente.md) — 15 defeitos, com arquivo, linha e reprodução
 * [Code smells](docs/auditoria/code-smells.md) — 14 achados estruturais, com evidência
 * [Divergências entre documentação e código](docs/auditoria/divergencias-doc-codigo.md) — 12 inconsistências no que recebemos
