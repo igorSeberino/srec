@@ -59,6 +59,12 @@ recebido falha sob concorrência
 * [Equipe, papéis e Matriz RACI](docs/time/overview.md) — inclui DoR, DoD e gestão de débito técnico
 * [Fluxo Trunk-Based Development](docs/time/fluxo-tbd.md) — branches, commits, ciclo do PR
 
+### QA
+
+* [Plano de testes](docs/qa/plano-de-testes.md) — estratégia, fronteira automatizado/manual e critérios de aprovação do QA
+* [Roteiro de regressão manual](docs/qa/roteiro-regressao.md) — 56 passos executáveis, executar antes e depois de cada ciclo de refatoração
+* [Registros de execução](docs/qa/execucoes/) — resultados de cada rodada do roteiro, versionados
+
 ### Entrega
 
 * [Especificações de implementação](docs/specs/) — uma pasta por issue, com o trabalho já desenhado
