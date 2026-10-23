@@ -1,5 +1,7 @@
 # SREC — Sistema de Reserva de Espaços e Coworking
 
+[![CI](https://github.com/igorSeberino/srec/actions/workflows/ci.yml/badge.svg)](https://github.com/igorSeberino/srec/actions/workflows/ci.yml)
+
 Sistema web para gerenciamento e reserva de estações de trabalho e salas de
 reunião em espaços de coworking. Node.js + Express + PostgreSQL no backend,
 React + Vite no frontend.
@@ -21,7 +23,7 @@ React + Vite no frontend.
 | Se você é... | Leia nesta ordem |
 |---|---|
 | **novo no time** | [auditoria](docs/auditoria/relatorio-n2.md) → [papéis e RACI](docs/time/overview.md) → [fluxo TBD](docs/time/fluxo-tbd.md) → sua issue no [board](https://github.com/users/igorSeberino/projects/1) |
-| **o grupo da N3** | [handoff](docs/handoff/n3.md) → [arquitetura alvo](docs/arquitetura/arquitetura-alvo.md) → [decisões](docs/arquitetura/decisoes.md) |
+| **o grupo da N3** | handoff (em elaboração na [#24](https://github.com/igorSeberino/srec/issues/24)) → [arquitetura alvo](docs/arquitetura/arquitetura-alvo.md) → [decisões](docs/arquitetura/decisoes.md) |
 | **avaliando a entrega** | [auditoria](docs/auditoria/relatorio-n2.md) → [métricas de baseline](docs/auditoria/metricas-baseline.md) → [relatório antes/depois](docs/auditoria/relatorio-antes-depois.md) → [board](https://github.com/users/igorSeberino/projects/1) |
 | **indo implementar algo** | a spec da sua issue em [`docs/specs/`](docs/specs/) → `/implementar <slug>` no Claude Code |
 
@@ -47,6 +49,8 @@ recebido falha sob concorrência
 * [Bugs do Cliente](docs/auditoria/bugs-do-cliente.md) — 15 defeitos, com arquivo, linha e reprodução
 * [Code smells](docs/auditoria/code-smells.md) — 14 achados estruturais, com evidência
 * [Divergências entre documentação e código](docs/auditoria/divergencias-doc-codigo.md) — 12 inconsistências no que recebemos
+* [Evidências de medição](docs/auditoria/evidencias/README.md) — saída bruta dos comandos que sustentam cada número
+* [Diário de onboarding](docs/auditoria/diario-onboarding.md) — quem subiu o sistema, quanto tempo levou e onde travou
 
 ### Arquitetura
 
@@ -70,7 +74,7 @@ recebido falha sob concorrência
 ### Entrega
 
 * [Especificações de implementação](docs/specs/) — uma pasta por issue, com o trabalho já desenhado
-* [Handoff para a N3](docs/handoff/n3.md)
+* Handoff para a N3 — em elaboração na [#24](https://github.com/igorSeberino/srec/issues/24), junto com o contrato OpenAPI da [#23](https://github.com/igorSeberino/srec/issues/23)
 
 A documentação original do grupo anterior está preservada em
 [`Documentação Oficial SREC.md`](Documentação%20Oficial%20SREC.md) como
@@ -118,7 +122,8 @@ docker compose up
 | PostgreSQL | `localhost:5432` | usuário `srec`, senha `srec`, banco `srec` |
 
 O `docker compose up` sobe o PostgreSQL, **espera o healthcheck**
-(`pg_isready`) passar e só então inicia o backend. Nenhum `.env` precisa ser
+(`pg_isready`) passar, aplica as migrations de `server/migrations/`
+(`npm run db:migrate`) e só então inicia o backend. Nenhum `.env` precisa ser
 criado: as variáveis estão em `docker-compose.yml`.
 
 Comandos do dia a dia:
@@ -145,7 +150,7 @@ docker compose -f docker-compose.yml up --build
 
 ### Opção B — Execução local sem Docker
 
-Mantida para quem já tem PostgreSQL 16 na máquina.
+Mantida para quem já tem Node.js 20 e PostgreSQL 16 na máquina.
 
 ```bash
 # 1. banco
@@ -155,34 +160,55 @@ createdb srec
 cd server
 cp .env.example .env     # ajuste DATABASE_URL
 npm install
-npm run dev              # porta 5000, cria as tabelas no boot
+npm run db:migrate       # cria e atualiza o schema; o boot não cria tabelas
+npm run dev              # porta 5000
 
 # 3. frontend, em outro terminal
 cd client
+cp .env.example .env     # opcional: o padrão já aponta para http://localhost:5000/api
 npm install --legacy-peer-deps
 npm run dev              # porta 5173
 ```
+
+O backend valida as variáveis de ambiente no boot e recusa subir se alguma
+estiver errada, dizendo qual. A lista completa está em `server/.env.example`.
 
 ### Testes e qualidade
 
 ```bash
 # backend
 cd server
-npm test
-npx jest --coverage --coverageReporters=text --collectCoverageFrom='src/**/*.js'
 npm run lint
+npm test                    # só os testes unitários, sem banco
+npm run db:test:up          # Postgres descartável na porta 5433 (Docker)
+npm run test:integration    # testes de integração contra esse banco
+npm run test:coverage       # tudo, com o gate de cobertura do jest.config.js
+npm run db:test:down
 
 # frontend
 cd client
+npm run format:check
 npm run lint
+npm test
 npm run build
 ```
 
-**Atenção ao medir cobertura.** `npx jest --coverage` sem
-`--collectCoverageFrom` reporta 35,48 %, porque só conta os arquivos que algum
-teste importou. A medição correta sobre todo o fonte dá **6,14 %**. Comparar
-números medidos de formas diferentes é o mesmo que não medir — use sempre a
-forma completa.
+A CI (`.github/workflows/ci.yml`) roda esses mesmos passos em todo PR, mais um
+smoke test do `docker compose`.
+
+**Atenção ao medir cobertura.** O número muda conforme o denominador. O
+comparável com o baseline (**6,14 %** no código recebido) é o de todo o fonte
+de `src/`, sem os arquivos de teste, rodado em série:
+
+```bash
+cd server
+npx jest --runInBand --coverage --coverageReporters=text \
+  --collectCoverageFrom='src/**/*.js' --collectCoverageFrom='!src/**/*.test.js'
+```
+
+No `main` essa medição dá **89,95 %** de statements. As outras formas de medir
+e por que cada uma erra estão na seção 1 do
+[relatório antes/depois](docs/auditoria/relatorio-antes-depois.md).
 
 ## Time de agentes de IA
 
@@ -205,7 +231,7 @@ dois problemas e sobrevive ao handoff da N3 — a justificativa está no
 
 ## Convenções
 
-* **Trunk-Based Development.** `main` é o único branch longevo. Branch curta `fix/<slug>`, `feature/<slug>` ou `refactor/<slug>`, PR pequeno, merge frequente. Merge exige **1 aprovação do QA + CI verde**.
+* **Trunk-Based Development.** `main` é o único branch longevo. Branch curta `fix/<slug>`, `feature/<slug>`, `refactor/<slug>`, `test/<slug>` ou `docs/<slug>`, PR pequeno, merge frequente. Merge exige **1 aprovação do QA + CI verde**.
 * **Conventional Commits** em português, no imperativo: `fix(reservations): impedir dupla reserva concorrente`.
 * **Idioma.** Issues, histórias, commits e documentação em português. Nomes de branch, identificadores de código e nomes de pasta de spec em inglês.
 * **Uma casa canônica por assunto.** Para relacionar documentos, use link, não copie o texto. Se o documento divergir do código, **o código vence**: corrija o documento.
