@@ -221,6 +221,34 @@ escreve `Canceled` com um (`Documentação Oficial SREC.md:97`), além de usar
 inicial maiúscula. Quem programar contra aquele diagrama escreve um status que
 o código nunca grava e que o `CHECK` de BE-03 rejeita.
 
+## 4. As divergências do banco: D-01, D-02 e D-03
+
+O catálogo das 12 divergências entre a documentação recebida e o código vive
+em [`docs/auditoria/divergencias-doc-codigo.md`](../auditoria/divergencias-doc-codigo.md).
+Esta seção detalha as três que tratam do modelo de dados, que são as que esta
+página resolve. As outras nove são tratadas por REQ-01, REQ-03, OPS-05, FE-01,
+BE-06, QA-01 e QA-02, conforme aquele catálogo.
+
+| # | O que a doc dizia | O que o código faz | Resolução |
+|---|---|---|---|
+| D-01 | MER com `UUID id PK` nas duas entidades (`Documentação Oficial SREC.md:84`, `:92`) | `id SERIAL PRIMARY KEY`, inteiro sequencial (`initDb.js:6`, `:15`) | **Corrigir a doc.** O DER real desta página mostra `SERIAL`. Migrar para `UUID` mudaria o formato dos ids nas 6 rotas com `:id` (`server/src/routes/resourceRoutes.js:7-9`, `reservationRoutes.js:7-9`) e exigiria migrar a FK, sem benefício para o usuário. A exposição de cardinalidade por id sequencial fica como **débito da N3**, a pagar junto com autenticação (RF13). |
+| D-02 | `resources.is_active BOOLEAN` (`Documentação Oficial SREC.md:88`) | a coluna não existe (`initDb.js:5-12`); nenhum model a referencia (`resourceModel.js:6`, `:29`) | **Corrigir a doc.** O DER real e o alvo não têm a coluna. Registrada como RF15 e RN14 `documentado mas inexistente`. A decisão entre exclusão física e desativação lógica é de BE-08; hoje a única forma de tirar um espaço de circulação é `DELETE`, que destrói o histórico (RN09). |
+| D-03 | `reservations.user_id UUID` (`Documentação Oficial SREC.md:94`) | `user_name VARCHAR(100) NOT NULL`, texto livre (`initDb.js:17`, `client/src/features/reservations/ReservationForm.jsx:60-71`) | **Corrigir a doc** + **débito da N3**. O DER real mostra `user_name`. Identidade de usuário é funcionalidade nova, com tabela, autenticação e migração de dado: escopo de N3, não de manutenção. RF13 e RN12. |
+
+### 4.1. O que confere
+
+Uma única coisa, e é a mais importante: a fórmula anti-sobreposição
+documentada em `Documentação Oficial SREC.md:72`,
+`Início_banco < Fim_novo AND Fim_banco > Início_novo`, é **exatamente** a
+implementada em `server/src/models/reservationModel.js:55`
+(`start_time < $3 AND end_time > $2`, com `$2` = início novo e `$3` = fim
+novo, conforme `reservationModel.js:59`).
+
+O grupo anterior acertou a regra central do produto. O defeito (BUG-01) está
+em executá-la como `SELECT` isolado, fora de transação e sem constraint de
+respaldo. É isso que BE-01 conserta, promovendo a fórmula de consulta de
+aplicação a constraint `EXCLUDE` de banco.
+
 ## 5. Prova executada
 
 Roteiro rodado em PostgreSQL 16.15: schema recebido (`initDb.js:4-24`) com
