@@ -104,7 +104,7 @@ docker compose up
 | Serviço | URL | Observação |
 |---|---|---|
 | Frontend | <http://localhost:5173> | Vite com hot reload |
-| API | <http://localhost:5000> | responde `SREC Coworking API is running...` |
+| API | <http://localhost:5000> | responde JSON `{"name":"SREC Coworking API","status":"running",...}`; saúde em `/health` |
 | PostgreSQL | `localhost:5432` | usuário `srec`, senha `srec`, banco `srec` |
 
 O `docker compose up` sobe o PostgreSQL, **espera o healthcheck**
