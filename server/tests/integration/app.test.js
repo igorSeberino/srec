@@ -24,19 +24,21 @@ describe('contrato geral da API', () => {
     expect(response.body).toMatchObject({ code: 'ROUTE_NOT_FOUND' });
   });
 
-  // BE-10 (#49): o erro do express.json() não tem `code`, o errorHandler
-  // não o reconhece e responde 500. test.failing até a correção.
-  test.failing('A-03 JSON malformado → 400, não 500 (BE-04, #49)', async () => {
+  // BE-10 (#49): o erro do express.json() não tem `code`; o errorHandler
+  // agora o reconhece pelo `type` do body-parser.
+  it('A-03 JSON malformado → 400 INVALID_JSON, não 500 (BE-04, #49)', async () => {
     const response = await api().post('/api/resources').set('Content-Type', 'application/json').send('{"name": "Sala",');
 
     expect(response.status).toBe(400);
     expect(response.headers['content-type']).toMatch(/application\/json/);
+    expect(response.body).toMatchObject({ code: 'INVALID_JSON' });
   });
 
-  test.failing('A-03b corpo acima de 100kb → 413, não 500 (BE-08, #49)', async () => {
+  it('A-03b corpo acima de 100kb → 413 PAYLOAD_TOO_LARGE, não 500 (BE-08, #49)', async () => {
     const response = await api().post('/api/resources').send({ name: 'x'.repeat(200 * 1024), type: 'workstation' });
 
     expect(response.status).toBe(413);
+    expect(response.body).toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
   });
 
   it.each([
