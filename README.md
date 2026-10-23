@@ -52,6 +52,7 @@ recebido falha sob concorrência
 * [Estado atual](docs/arquitetura/estado-atual.md) — como o sistema é hoje, engenharia reversa
 * [Arquitetura alvo](docs/arquitetura/arquitetura-alvo.md) — onde chegamos ao fim da N2
 * [Decisões (ADRs)](docs/arquitetura/decisoes.md) — o que decidimos, as alternativas e o custo de cada escolha
+* [DER recebido e atual](docs/arquitetura/der.md) — o schema que recebemos, o da `main` depois das migrations e as pendências de integridade
 
 ### Produto, requisitos e time
 

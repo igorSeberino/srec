@@ -13,20 +13,23 @@ código vence. As divergências estão catalogadas em
 e as três que tratam do banco estão detalhadas em
 [`docs/arquitetura/der.md`](../arquitetura/der.md).
 
-As evidências apontam para a `main` depois de FE-01 (PR #35), FE-04 (PR #36) e
-OPS-01 (PR #40). O backend está como foi recebido.
+As evidências apontam para a `main` depois do backend da N2 (PR #41), do
+frontend (FE-01 a FE-05, PRs #35, #36, #42, #43 e #44) e da subida em Docker
+Compose (OPS-01, PR #40). Quando uma regra mudou de situação por um PR da N2,
+isso aparece no campo **Corrigido na N2**, com a situação recebida preservada.
 
 ## O que o sistema entrega
 
 | Capacidade | Onde | Estado |
 |---|---|---|
-| Cadastro de espaços com nome, tipo e capacidade | `client/src/features/resources/ResourceForm.jsx:19-29`, `POST /api/resources` | funciona, com defeito em tipo e capacidade (RN01, RN02) |
-| Listagem de espaços | `client/src/features/resources/ResourceListItem.jsx:5-20`, `GET /api/resources` | funciona |
-| Exclusão de espaço | `client/src/features/resources/ResourcesPanel.jsx:6-14`, `DELETE /api/resources/:id` | funciona, mas apaga o histórico de reservas (RN09) |
-| Criação de reserva com recusa de sobreposição | `client/src/features/reservations/ReservationForm.jsx:23-39`, `POST /api/reservations` | funciona em uso sequencial; falha sob concorrência (RN03) |
+| Cadastro de espaços com nome, tipo e capacidade | `client/src/features/resources/ResourceForm.jsx:58-102`, `POST /api/resources` | funciona; a API ainda aceita tipo e capacidade inválidos (RN01, RN02) |
+| Edição de espaço | `client/src/features/resources/ResourceListItem.jsx:15-27`, `PUT /api/resources/:id` | funciona, com o mesmo defeito de tipo e capacidade |
+| Listagem de espaços | `client/src/features/resources/ResourceList.jsx:15-37`, `GET /api/resources` | funciona |
+| Exclusão de espaço | `client/src/features/resources/CascadeDeleteDialog.jsx:7-78`, `DELETE /api/resources/:id` | funciona; avisa quantas reservas serão apagadas, e apaga (RN09) |
+| Criação de reserva com recusa de sobreposição | `client/src/features/reservations/ReservationForm.jsx:58-109`, `POST /api/reservations` | funciona; sob concorrência, só é segura em banco migrado (RN03) |
 | Listagem de reservas em ordem cronológica | `client/src/features/reservations/ReservationList.jsx:17-21`, `GET /api/reservations` | funciona |
-| Concluir ou cancelar reserva | `client/src/features/reservations/ReservationListItem.jsx:21-37`, `PATCH /api/reservations/:id/status` | funciona pela interface; a API aceita qualquer valor (RN07) |
-| Exclusão definitiva de reserva | `client/src/features/reservations/ReservationsPanel.jsx:21-24`, `DELETE /api/reservations/:id` | funciona |
+| Concluir ou cancelar reserva | `client/src/features/reservations/ReservationListItem.jsx:21-37`, `PATCH /api/reservations/:id/status` | funciona; a API valida valor e transição (RN07) |
+| Exclusão definitiva de reserva | `client/src/features/reservations/ReservationsPanel.jsx:50-67`, `DELETE /api/reservations/:id` | funciona |
 
 ## O que o sistema não entrega
 
@@ -39,7 +42,7 @@ Detalhamento e decisão em [`docs/produto/requisitos.md`](requisitos.md).
 Consequência de produto a ter clara: **o SREC é hoje um sistema de uso
 confiado.** Qualquer pessoa com acesso à URL cadastra, altera e exclui
 qualquer coisa, e o campo "Nome do Responsável"
-(`client/src/features/reservations/ReservationForm.jsx:60-71`) é texto livre
+(`client/src/features/reservations/ReservationForm.jsx:73-81`) é texto livre
 sem verificação. Isso é aceitável em um coworking pequeno com acesso restrito à
 rede interna, e inaceitável em qualquer exposição pública. Não é bug; é o
 perímetro de uso do produto, e precisa estar escrito.
@@ -68,24 +71,20 @@ capacidade em grupo). A distinção vem da própria definição do produto
 
 **Situação.** `implementado com defeito (BUG-10)`
 
-**Evidência.** A interface oferece só os dois valores corretos, em um
-`<select>` (`client/src/features/resources/ResourceForm.jsx:48-56`), a partir
-das constantes de `client/src/constants/domain.js:1-4`. A API aceita qualquer
-string: `server/src/controllers/resourceController.js:7` só verifica presença
-(`if (!name || !type)`), e `server/src/config/initDb.js:8` declara
-`type VARCHAR(50) NOT NULL` com os valores válidos apenas em **comentário
-SQL**, que o banco ignora. `POST /api/resources` com `{"type":"banana"}`
-responde `201`.
+**Evidência.** A interface só oferece os dois valores, a partir de
+`client/src/constants/domain.js:1-4`, e recusa outro antes do envio
+(`client/src/features/resources/validation.js:23-25`). A API aceita qualquer
+string: `server/src/services/resourceService.js:6` só verifica presença, e
+`server/src/config/initDb.js:8` declara `type VARCHAR(50) NOT NULL` com os
+valores válidos apenas em **comentário SQL**. Nenhuma migration acrescenta o
+`CHECK`. `POST /api/resources` com `{"type":"banana"}` responde `201`.
 
-No código recebido, a lista exibia qualquer tipo desconhecido como "Estação de
-Trabalho". Desde FE-01, `resourceTypeLabel`
-(`client/src/constants/domain.js:17-21`) mostra o valor cru: o dado inválido
-deixou de ficar disfarçado na tela, mas continua sendo aceito pela API.
+Desde FE-01, um tipo desconhecido aparece na lista com o próprio nome
+(`client/src/constants/domain.js:17-21`), e não mais disfarçado de "Estação de
+Trabalho".
 
-**Trabalho na N2.** O índice de specs atribui BUG-10 a BE-03, mas a spec
-BE-03 só trata `status`. O `CHECK (type IN ('workstation','meeting_room'))`
-tem prefixo de migration reservado em OPS-02 (`1761000007000`), sem spec que
-o implemente.
+**Trabalho na N2.** BUG-10 na issue #47. O `CHECK` é pendência declarada em
+[`docs/arquitetura/der.md`](../arquitetura/der.md).
 
 ---
 
@@ -95,22 +94,18 @@ Espaço com capacidade zero ou negativa não representa nada no mundo físico.
 
 **Situação.** `implementado com defeito (BUG-09)`
 
-**Evidência.** `server/src/controllers/resourceController.js:10` passa
-`capacity || 1`. Em JavaScript, `0 || 1` vale `1`: enviar `capacity: 0` grava
-**1**, responde `201`, e o Operador nunca sabe que o valor foi trocado.
-Enviar `capacity: -5` grava `-5`, porque `-5` é *truthy* e
-`server/src/config/initDb.js:9` não tem `CHECK`. O cliente mitiga com
-`min="1"` no `<input type="number">`
-(`client/src/features/resources/ResourceForm.jsx:60-68`), que é validação de
-navegador e não protege a API.
+**Evidência.** `server/src/services/resourceService.js:5` só aplica o default
+`capacity = 1` quando o campo não vem; `capacity: 0` e `capacity: -5` chegam ao
+banco como estão, e `server/src/config/initDb.js:9` não tem `CHECK`. Mudou o
+sintoma: o código recebido trocava `0` por `1` em silêncio; agora grava `0`.
+A edição tem o mesmo comportamento (`server/src/models/resourceModel.js:29-30`).
 
-Duas falhas opostas no mesmo parâmetro: um valor inválido é silenciosamente
-corrigido, outro é silenciosamente aceito. Nenhum dos dois devolve erro.
+O cliente recusa capacidade não inteira ou menor que 1
+(`client/src/features/resources/validation.js:27-31`), o que protege só quem
+usa a tela.
 
-**Trabalho na N2.** O índice de specs atribui BUG-09 a BE-02, mas a spec
-BE-02 só trata a janela da reserva. O `CHECK` de capacidade divide o prefixo
-`1761000007000` de OPS-02 com RN01, também sem spec. FE-03 espelha a regra no
-cliente, o que não protege a API.
+**Trabalho na N2.** BUG-09 na issue #47. O `CHECK (capacity > 0)` é pendência
+declarada em [`docs/arquitetura/der.md`](../arquitetura/der.md).
 
 ---
 
@@ -129,31 +124,28 @@ se sobrepõem, porque a comparação é estrita.
 
 **Situação.** `implementado com defeito (BUG-01)`
 
-**Evidência.** A fórmula está correta e implementada em
-`server/src/models/reservationModel.js:55`,
-`(start_time < $3 AND end_time > $2)`, com `$2` = início novo e `$3` = fim
-novo (`reservationModel.js:59`). Confere literalmente com
-`Documentação Oficial SREC.md:72`. Tem teste unitário
-(`server/src/models/reservationModel.test.js:11-37`).
+**Evidência.** A fórmula continua em
+`server/src/models/reservationModel.js:55`, `start_time < $3 AND end_time > $2`,
+e confere literalmente com `Documentação Oficial SREC.md:72`. O serviço a
+consulta antes de gravar (`server/src/services/reservationService.js:18`).
 
-O defeito é de execução, não de lógica:
-`server/src/controllers/reservationController.js:12-16` **lê** a
-disponibilidade e `:23-28` **escreve** a reserva, sem transação, sem
-`SELECT ... FOR UPDATE` e sem constraint de respaldo no banco
-(`initDb.js:14-23` não tem `EXCLUDE`). Entre a leitura e a escrita há uma
-janela em que outra requisição lê o mesmo "disponível". Duas requisições
-simultâneas para o mesmo intervalo recebem `201` as duas.
+Desde o PR #41 a regra também existe no banco, como a constraint
+`reservations_no_overlap` (`server/migrations/001_reservation_no_overlap.sql`),
+e o serviço traduz a violação em `409` (`reservationService.js:19-24`). O
+teste `server/tests/integration/reservations.concurrency.test.js` prova, contra
+PostgreSQL real, que requisições simultâneas resultam em uma só reserva.
 
-Dois caminhos adicionais furam esta regra:
+O defeito que sobra é de ambiente: a constraint só existe depois de
+`npm run db:migrate`, que nem o boot do servidor (`server/src/index.js:12`) nem
+o `docker compose up` executam. Sem ela, a consulta do serviço é lida e
+escrita sem transação, e a janela de concorrência do código recebido continua
+aberta.
 
-* reserva com `end_time < start_time` (RN05) define intervalo vazio, que
-  nunca satisfaz a fórmula, então nunca colide com nada;
-* reserva com `status NULL` (RN07) é invisível ao `WHERE status != 'cancelled'`
-  de `reservationModel.js:53`, porque `NULL != 'cancelled'` avalia para
-  `NULL`.
+**Corrigido na N2.** BE-01 (PR #41), no código. Situação no código recebido:
+`implementado com defeito (BUG-01)`.
 
-**Trabalho na N2.** BE-01: constraint `EXCLUDE` no banco. A constraint é o
-que torna a regra inviolável por qualquer caminho, inclusive `psql`.
+**Trabalho na N2.** Aplicar as migrations na subida (OPS-02, #17) fecha o
+BUG-01 em todo ambiente.
 
 ---
 
@@ -163,13 +155,15 @@ Cancelar uma reserva devolve o intervalo ao pool de disponibilidade.
 
 **Situação.** `implementado`
 
-**Evidência.** `server/src/models/reservationModel.js:53` filtra
-`status != 'cancelled'` na verificação de disponibilidade. Reserva
+**Evidência.** `server/src/models/reservationModel.js:54` filtra
+`status <> 'cancelled'` na verificação de disponibilidade, e o `EXCLUDE` de
+BE-01 tem a mesma condição (`WHERE (status <> 'cancelled')`). Reserva
 `cancelled` não bloqueia novas reservas no mesmo intervalo.
 
-**Ressalva.** Depende de `status` ser sempre um dos três valores válidos. Com
-`status NULL` (ver RN07), a reserva não é `cancelled`, mas também não
-bloqueia. A regra só fica sólida depois de BE-03 e do `NOT NULL` em `status`.
+A ressalva do código recebido, status `NULL` escapando do filtro, está
+fechada: a API recusa status ausente ou inválido
+(`server/src/services/reservationService.js:33`), e, com as migrations, o
+banco também (`NOT NULL` e `reservations_status_check`).
 
 ---
 
@@ -177,20 +171,19 @@ bloqueia. A regra só fica sólida depois de BE-03 e do `NOT NULL` em `status`.
 
 Uma reserva ocupa um intervalo de tempo com duração positiva.
 
-**Situação.** `não implementado`
+**Situação.** `implementado`
 
-**Evidência.** `server/src/controllers/reservationController.js:7` verifica
-apenas a presença dos quatro campos; não há comparação entre `start_time` e
-`end_time` em nenhuma das 90 linhas do controller.
-`server/src/config/initDb.js:18-19` declara as duas colunas `NOT NULL` e nada
-mais.
+**Evidência.** `server/src/validators/reservationValidator.js:13` recusa
+`end_time` menor ou igual a `start_time` com `400` e
+`code: "END_BEFORE_START"`, e a migration
+`server/migrations/002_reservation_time_window_check.sql` cria o
+`CHECK (end_time > start_time)`. O cliente limita o campo de término ao início
+escolhido (`client/src/features/reservations/ReservationForm.jsx:97`). Coberto
+por `server/tests/integration/reservations.window.test.js`.
 
-É o BUG-02, e o agravante é o encadeamento com RN03: o intervalo invertido é
-vazio, então a fórmula de sobreposição nunca é satisfeita por ele. A reserva
-corrompida **não aparece** nas verificações de disponibilidade de ninguém.
-
-**Trabalho na N2.** BE-02: `CHECK (end_time > start_time)` e validação no
-controller devolvendo `400`.
+**Corrigido na N2.** BE-02 (PR #41). Situação no código recebido:
+`não implementado` (BUG-02): a reserva invertida era aceita e, por ser um
+intervalo vazio, nunca colidia com nada.
 
 ---
 
@@ -199,18 +192,18 @@ controller devolvendo `400`.
 Reservar um horário que já passou não tem significado operacional: o espaço
 já foi ou não foi usado.
 
-**Situação.** `não implementado`
+**Situação.** `implementado`
 
-**Evidência.** Não há comparação com `NOW()`, `CURRENT_TIMESTAMP` ou
-`Date.now()` em `server/src/controllers/reservationController.js`. Os
-`<input type="datetime-local">` do cliente
-(`client/src/features/reservations/ReservationForm.jsx:74-92`) não têm
-atributo `min`. É o BUG-08.
+**Evidência.** `server/src/validators/reservationValidator.js:14` recusa
+início anterior ao momento da criação, com 60 s de tolerância de relógio
+(`MAX_CLOCK_SKEW_MS`, `:1`), respondendo `400` com
+`code: "START_IN_THE_PAST"`. O cliente aplica a mesma regra e põe `min` no
+campo de início (`client/src/features/reservations/ReservationForm.jsx:87`).
+A regra fica só na aplicação, porque depende de `now()`, que não pode entrar
+em `CHECK`.
 
-**Trabalho na N2.** BE-02 já decidiu o comportamento: a API recusa
-`start_time` anterior ao momento da criação, com 60 s de tolerância de
-relógio (`MAX_CLOCK_SKEW_MS`). A regra fica só na aplicação, porque depende de
-`now()`, que não pode entrar em `CHECK`.
+**Corrigido na N2.** BE-02 (PR #41) e FE-03 (PR #43). Situação no código
+recebido: `não implementado` (BUG-08).
 
 ---
 
@@ -220,40 +213,22 @@ Ciclo de vida: `scheduled → completed` ou `scheduled → cancelled`. Estado
 final não transiciona. A documentação recebida descreve o mesmo ciclo
 (`Documentação Oficial SREC.md:32`: `Agendado -> Concluído ou Cancelado`).
 
-**Situação.** `implementado com defeito (BUG-03)`
+**Situação.** `implementado`
 
-**Evidência.** O nascimento está correto:
-`server/src/models/reservationModel.js:6` insere sem `status`, e
-`server/src/config/initDb.js:20` aplica `DEFAULT 'scheduled'`.
+**Evidência.** O ciclo de vida está escrito uma vez, em
+`server/src/domain/reservationStatus.js:7-11`. A API recusa status fora do
+vocabulário com `400` (`server/src/services/reservationService.js:33`) e
+transição a partir de estado final com `409` (`:38`); o `UPDATE` só altera a
+linha se o status atual for uma origem válida
+(`server/src/models/reservationModel.js:37`). Com as migrations, o banco
+recusa status inválido (`reservations_status_check`) e `NULL`. A interface só
+mostra os botões para reserva `scheduled`
+(`client/src/features/reservations/ReservationListItem.jsx:21`). Coberto por
+`server/tests/integration/reservations.status.test.js`.
 
-A interface respeita o ciclo: os botões de concluir e cancelar só aparecem
-quando o status é `scheduled`
-(`client/src/features/reservations/ReservationListItem.jsx:21`) e enviam
-exatamente `completed` (`:26`) e `cancelled` (`:32`), a partir de
-`client/src/constants/domain.js:11-15`.
-
-A API não respeita nada.
-`server/src/controllers/reservationController.js:60-73` repassa
-`req.body.status` direto para o `UPDATE` (`reservationModel.js:32-41`) sem
-verificar valor nem transição:
-
-* `{"status":"banana"}` grava `banana` e responde `200`. Não há `CHECK` em
-  `initDb.js:20`.
-* `{"status":"scheduled"}` em reserva já `completed` volta a um estado
-  anterior.
-* corpo `{}` faz `req.body.status` ser `undefined`
-  (`reservationController.js:63`), o driver `pg` grava `NULL`, e
-  `status VARCHAR(20) DEFAULT 'scheduled'` não é `NOT NULL`. A partir daí a
-  reserva **desaparece de RN03**: em `reservationModel.js:53`,
-  `NULL != 'cancelled'` avalia para `NULL` e a linha não entra no resultado.
-  Um `PATCH` com corpo vazio desarma a regra central para aquela reserva.
-
-A proteção do ciclo de vida existe apenas na camada que o usuário vê.
-
-**Trabalho na N2.** BE-03: `CHECK (status IN ('scheduled','cancelled','completed'))`
-e validação no controller. O `SET NOT NULL` em `status` está na migration de
-BE-01; a tabela de prefixos de OPS-02 o atribui a BE-03. Ver a nota de
-divergência entre specs em [`docs/arquitetura/der.md`](../arquitetura/der.md).
+**Corrigido na N2.** BE-03 (PR #41). Situação no código recebido:
+`implementado com defeito (BUG-03)`: a API gravava qualquer string, aceitava
+`NULL`, e um `PATCH` com corpo vazio tirava a reserva da regra RN03.
 
 ---
 
@@ -264,26 +239,17 @@ o registro. São intenções distintas e não devem ser confundidas.
 
 **Situação.** `implementado`
 
-**Evidência.** Os dois caminhos existem e são distintos na API:
+**Evidência.** Os dois caminhos são distintos na API:
 `PATCH /api/reservations/:id/status` com `cancelled`
-(`server/src/routes/reservationRoutes.js:8`) preserva a linha;
-`DELETE /api/reservations/:id` (`:9`) executa
-`DELETE FROM reservations WHERE id = $1` (`reservationModel.js:44`).
+(`server/src/routes/reservationRoutes.js:9`) preserva a linha;
+`DELETE /api/reservations/:id` (`:10`) apaga
+(`server/src/models/reservationModel.js:45`).
 
-**Achado colateral, não catalogado.** A interface descreve a exclusão com três
-vocabulários, e um deles é a palavra reservada para a outra ação:
-
-* o `window.confirm` diz "Deseja **cancelar** esta reserva permanentemente?"
-  (`client/src/features/reservations/ReservationsPanel.jsx:22`);
-* o nome acessível do botão diz "Excluir definitivamente"
-  (`client/src/features/reservations/ReservationListItem.jsx:39`);
-* o feedback de sucesso diz "Reserva removida!" (`ReservationsPanel.jsx:23`).
-
-Um Operador que queira cancelar tende a clicar na lixeira, porque o texto de
-confirmação fala de cancelamento, e perde o histórico. FE-01 preservou esse
-texto de propósito, por ser refatoração sem mudança de comportamento. O
-problema não está em `docs/auditoria/` nem em nenhuma spec: fica registrado
-aqui para virar issue com a label `bug do cliente`.
+Desde FE-05 (PR #44), a interface também separa: o diálogo de exclusão se
+chama "Excluir esta reserva?", avisa que a reserva "será apagada do histórico"
+e orienta a usar o cancelamento para manter o histórico
+(`client/src/features/reservations/ReservationsPanel.jsx:50-66`). No código
+recebido, a confirmação da exclusão pedia para "cancelar" a reserva.
 
 ---
 
@@ -294,51 +260,45 @@ negócio e sobrevive à sala.
 
 **Situação.** `não implementado`
 
-**Evidência.** `server/src/config/initDb.js:16` declara
-`resource_id INTEGER REFERENCES resources(id) ON DELETE CASCADE`. Excluir um
-recurso apaga, no mesmo comando e em silêncio, **todas** as suas reservas,
-passadas e futuras. O `window.confirm`
-(`client/src/features/resources/ResourcesPanel.jsx:7`), "Deseja realmente
-remover este espaço?", não menciona a perda, e a resposta da API é
-`{"message":"Resource deleted successfully"}`
-(`server/src/controllers/resourceController.js:64`), sem contagem do que foi
-destruído.
+**Evidência.** `server/src/config/initDb.js:16` continua declarando
+`ON DELETE CASCADE`, e nenhuma migration troca para `RESTRICT`. Excluir um
+recurso apaga todas as suas reservas, passadas e futuras. A resposta da API,
+`{"message":"Recurso excluído com sucesso."}`
+(`server/src/controllers/resourceController.js:13`), não diz quantas foram
+junto.
 
-É o BUG-06, o único bug do catálogo que **perde dado de forma irrecuperável**
-com um clique.
+FE-05 (PR #44) mitigou na interface: antes de excluir, busca as reservas no
+servidor, mostra quantas serão apagadas e exige marcar a ciência da perda
+(`client/src/features/resources/ResourcesPanel.jsx:15-26`,
+`client/src/features/resources/CascadeDeleteDialog.jsx:35-73`). A perda
+continua acontecendo; agora é avisada.
 
-**Trabalho na N2.** FE-05 dá superfície ao problema, com um diálogo que avisa
-a exclusão em cascata, e está condicionada à decisão de BE-08 entre exclusão
-física e desativação lógica. A troca de `ON DELETE CASCADE` por
-`ON DELETE RESTRICT` tem prefixo de migration reservado em OPS-02
-(`1761000008000`), sem spec que a implemente. Se não entrar na N2, é débito de
-prioridade máxima no handoff da N3.
+É o BUG-06, o único bug do catálogo que **perde dado de forma irrecuperável**.
+
+**Trabalho na N2.** A troca por `RESTRICT` tem prefixo reservado em OPS-02 e é
+pendência declarada em [`docs/arquitetura/der.md`](../arquitetura/der.md). Se
+não entrar na N2, é débito de prioridade máxima no handoff da N3.
 
 ---
 
 ### RN10 — Toda reserva pertence a um espaço existente
 
-**Situação.** `implementado com defeito (CS-02)`
+**Situação.** `implementado`
 
-**Evidência.** A chave estrangeira existe (`initDb.js:16`,
-`REFERENCES resources(id)`) e impede que `resource_id` aponte para recurso
-inexistente. Dois furos:
+**Evidência.** A API confere o espaço antes de gravar: `resource_id` ausente
+responde `400` com `code: "MISSING_FIELDS"`, e espaço inexistente responde
+`404` com `code: "RESOURCE_NOT_FOUND"`
+(`server/src/services/reservationService.js:10-13`). Se a FK for violada por
+outro caminho, o middleware central traduz o `23503` em `409`
+(`server/src/errors/pgErrorCodes.js:4`).
 
-1. **A coluna aceita `NULL`.** `initDb.js:16` não declara `NOT NULL`. Um
-   `INSERT` por `psql` com `resource_id NULL` é aceito pelo banco. A API
-   barra por acidente: `!resource_id` é verdadeiro para `null`
-   (`reservationController.js:7`). A integridade referencial depende de uma
-   checagem de *truthiness* no JavaScript.
-2. **`resource_id` inexistente devolve `500`.** `POST /api/reservations` com
-   `resource_id: 99999` viola a FK, o PostgreSQL levanta `23503`, e o `catch`
-   genérico de `reservationController.js:30-33` devolve
-   `{"error":"Internal server error"}`. O Operador recebe "erro do servidor"
-   quando o erro é dele. É o tratamento de erro duplicado do CS-02.
+**Ressalva.** O banco ainda aceita `resource_id NULL` (`initDb.js:16` não
+declara `NOT NULL`, e nenhuma migration acrescenta). A regra vale para quem
+passa pela API; por `psql`, não. É pendência declarada em
+[`docs/arquitetura/der.md`](../arquitetura/der.md), sem spec.
 
-**Trabalho na N2.** BE-04 mapeia o SQLSTATE `23503` para `409` no middleware
-central de erro. O `NOT NULL` em `resource_id` não está em nenhuma spec nem na
-tabela de prefixos de OPS-02: é pendência declarada em
-[`docs/arquitetura/der.md`](../arquitetura/der.md).
+**Corrigido na N2.** BE-04 e BE-05 (PR #41). Situação no código recebido:
+`implementado com defeito (CS-02)`: espaço inexistente respondia `500`.
 
 ---
 
@@ -347,23 +307,18 @@ tabela de prefixos de OPS-02: é pendência declarada em
 O Operador digita e lê horários no fuso em que o coworking opera
 (`America/Sao_Paulo`, UTC-03).
 
-**Situação.** `implementado com defeito (BUG-07)`
+**Situação.** `implementado`
 
-**Evidência.** `server/src/config/initDb.js:18-19` usa `TIMESTAMP` sem
-`WITH TIME ZONE`: o PostgreSQL guarda os dígitos e **descarta** qualquer
-offset recebido. O cliente envia string sem offset, produzida por
-`<input type="datetime-local">`
-(`client/src/features/reservations/ReservationForm.jsx:74-92`, enviada em
-`:29-30`), e na leitura aplica `new Date(...).toLocaleString('pt-BR')`
-(`client/src/features/reservations/ReservationListItem.jsx:15-16`), que
-reinterpreta o valor. O horário exibido pode diferir do digitado.
+**Evidência.** As colunas são `TIMESTAMPTZ` (`server/src/config/initDb.js:18-19`
+em banco novo; `server/migrations/0001_timestamptz.sql` em banco existente). A
+API só aceita horário com offset (`server/src/utils/datetime.js:2-7`), e o
+cliente envia o valor do campo convertido para ISO 8601 com o offset do
+navegador (`client/src/lib/datetime.js:18-26`, chamado em
+`client/src/services/api.js:37-38`). O instante gravado não depende mais da
+variável `TZ` da máquina.
 
-O critério decisivo do teste: hoje o resultado **muda** se o processo Node
-subir com `TZ=UTC`. Comportamento de negócio que depende da variável de
-ambiente da máquina não é comportamento; é acidente.
-
-**Trabalho na N2.** BE-07 (`TIMESTAMPTZ`) e FE-02 (enviar com offset
-explícito).
+**Corrigido na N2.** BE-07 (PR #41) e FE-02 (PR #42). Situação no código
+recebido: `implementado com defeito (BUG-07)`.
 
 ---
 
@@ -374,10 +329,11 @@ explícito).
 **Evidência.** A documentação recebida declara `UUID user_id`
 (`Documentação Oficial SREC.md:94`) e afirma que `GET /api/reservations`
 lista "as reservas do usuário atual" (`:116`). O que existe é
-`user_name VARCHAR(100) NOT NULL` (`initDb.js:17`), preenchido por digitação
-livre (`client/src/features/reservations/ReservationForm.jsx:60-71`), sem
-tabela de usuários, sem FK e sem unicidade. `findAll` não tem `WHERE`
-(`reservationModel.js:15`): lista tudo, de todos.
+`user_name VARCHAR(100) NOT NULL` (`server/src/config/initDb.js:17`),
+preenchido por digitação livre
+(`client/src/features/reservations/ReservationForm.jsx:73-81`), sem tabela de
+usuários, sem FK e sem unicidade. `findAll` não tem `WHERE`
+(`server/src/models/reservationModel.js:16`): lista tudo, de todos.
 
 "Responsável" no SREC é uma etiqueta de texto, não uma identidade. Duas
 pessoas chamadas Carlos são a mesma string, e o sistema não as distingue.
@@ -393,12 +349,12 @@ débito da N3. Ver RF13 em [`docs/produto/requisitos.md`](requisitos.md).
 
 **Evidência.** `Documentação Oficial SREC.md:109` marca `POST /api/resources`
 como "Nível de acesso Admin", e `:45` e `:52` amarram o CRUD de espaços ao
-ator `admin`. No código, `server/src/index.js:13-14` registra apenas `cors()`
-e `express.json()` antes das rotas (`:17-18`);
-`server/src/routes/resourceRoutes.js:5-9` não tem middleware; e
-`server/package.json:18-23` não traz nenhuma dependência de autenticação.
-`curl -X DELETE http://localhost:5000/api/resources/1` apaga um espaço e, por
-RN09, todas as reservas dele.
+ator `admin`. No código, a cadeia de middlewares de `server/src/app.js:14-19`
+tem `helmet`, CORS restrito e limite de requisições, mas nenhuma
+autenticação; `server/src/routes/resourceRoutes.js:6-10` só valida o `:id`; e
+`server/package.json:21-28` não traz nenhuma dependência de autenticação.
+Qualquer cliente de origem permitida apaga um espaço e, por RN09, todas as
+reservas dele.
 
 **Decisão da N2.** Não implementar; corrigir a documentação e registrar como
 débito da N3. Ver RF14.
@@ -411,15 +367,16 @@ débito da N3. Ver RF14.
 
 **Evidência.** `Documentação Oficial SREC.md:88` declara
 `BOOLEAN is_active` em `RESOURCE`. A coluna não existe
-(`server/src/config/initDb.js:5-12`), os models não a leem nem escrevem
-(`server/src/models/resourceModel.js:6`, `:29`) e nenhuma consulta a filtra.
+(`server/src/config/initDb.js:5-12`), nenhuma migration a cria, os models não
+a leem nem escrevem (`server/src/models/resourceModel.js:6`, `:29`) e nenhuma
+consulta a filtra.
 
 A ausência tem custo direto: a única forma de tirar um espaço de circulação
 é `DELETE`, que por RN09 destrói o histórico. **A falta de `is_active`
 transforma uma inativação temporária em perda permanente de dado.**
 
-**Decisão da N2.** Não implementar nesta entrega; BE-08 decide entre exclusão
-física e desativação lógica, e FE-05 se adapta à decisão. Ver RF15.
+**Decisão da N2.** Não implementar. O PR #41 manteve a exclusão física, e
+FE-05 a cercou de aviso. Ver RF15.
 
 ---
 
@@ -430,9 +387,9 @@ Uma reserva de 5 minutos ou de 3 anos não serve ao negócio de coworking.
 **Situação.** `não implementado`
 
 **Evidência.** Não há nenhum limite em código, nem mínimo nem máximo:
-`server/src/controllers/reservationController.js:4-34` não compara duração, e
-`server/src/config/initDb.js:18-19` não tem `CHECK`. A documentação recebida
-também não menciona limites.
+`server/src/validators/reservationValidator.js:8-16` confere formato, ordem
+e passado, mas não duração, e `server/src/config/initDb.js:18-19` não tem
+`CHECK`. A documentação recebida também não menciona limites.
 
 **Decisão de produto pendente.** Os valores de mínimo e máximo são decisão do
 PO, não do engenheiro de requisitos. Até que existam, o `CHECK` de janela de
@@ -441,27 +398,34 @@ inquestionável. Levantar com `@igorSeberino`.
 
 ## Rastreabilidade regra → requisito → spec
 
-| Regra | Situação | Requisito | Spec da N2 |
+| Regra | Situação hoje | Requisito | Spec da N2 |
 |---|---|---|---|
-| RN01 | implementado com defeito (BUG-10) | RF01 | nenhuma (prefixo `1761000007000` reservado em OPS-02) |
-| RN02 | implementado com defeito (BUG-09) | RF01 | nenhuma no backend (prefixo `1761000007000`); FE-03 no cliente |
-| RN03 | implementado com defeito (BUG-01) | RF06 | BE-01 |
-| RN04 | implementado | RF06, RF09 | — (sólida após BE-03) |
-| RN05 | não implementado | RF06 | BE-02 |
-| RN06 | não implementado | RF06 | BE-02 |
-| RN07 | implementado com defeito (BUG-03) | RF09, RF19 | BE-03, BE-01 (`NOT NULL`) |
-| RN08 | implementado | RF09, RF10 | nenhuma (achado colateral, abrir issue) |
-| RN09 | não implementado | RF05 | FE-05 (aviso); prefixo `1761000008000` reservado em OPS-02 |
-| RN10 | implementado com defeito (CS-02) | RF06 | BE-04; `NOT NULL` sem spec |
-| RN11 | implementado com defeito (BUG-07) | RF06, RNF04 | BE-07, FE-02 |
+| RN01 | implementado com defeito (BUG-10) | RF01, RF04 | issue #47 |
+| RN02 | implementado com defeito (BUG-09) | RF01, RF04 | issue #47; FE-03 no cliente |
+| RN03 | implementado com defeito (BUG-01) | RF06 | BE-01 (**corrigido** no código, PR #41); migrations na subida em OPS-02 |
+| RN04 | implementado | RF06, RF09 | BE-03 fechou a ressalva |
+| RN05 | implementado | RF06 | BE-02 (**corrigido**, PR #41) |
+| RN06 | implementado | RF06 | BE-02, FE-03 (**corrigido**) |
+| RN07 | implementado | RF09, RF19 | BE-03 (**corrigido**, PR #41) |
+| RN08 | implementado | RF09, RF10 | FE-05 (texto da interface, PR #44) |
+| RN09 | não implementado | RF05 | FE-05 (aviso); `RESTRICT` pendente |
+| RN10 | implementado | RF06 | BE-04, BE-05 (**corrigido**); `NOT NULL` pendente |
+| RN11 | implementado | RF06, RNF04 | BE-07, FE-02 (**corrigido**) |
 | RN12 | documentado mas inexistente | RF13 | nenhuma (débito da N3) |
 | RN13 | documentado mas inexistente | RF14 | nenhuma (débito da N3) |
-| RN14 | documentado mas inexistente | RF15 | BE-08 decide; FE-05 se adapta |
+| RN14 | documentado mas inexistente | RF15 | nenhuma (débito da N3) |
 | RN15 | não implementado | RF06 | nenhuma (decisão de produto pendente) |
 
-**Leitura.** Das 15 regras de negócio, **2** estão implementadas (RN04, que
-depende de BE-03 para ser sólida, e RN08, com o achado de texto na
-interface), **6** estão implementadas com defeito catalogado, **4** não
-existem e **3** existem apenas na documentação recebida. A documentação
-recebida registrava **1** regra de negócio: a fórmula anti-sobreposição
-(`Documentação Oficial SREC.md:67-75`).
+## Contagem
+
+| Situação | Antes do backend da N2 (até o #40) | Hoje (`main`) |
+|---|---|---|
+| `implementado` | 2 | **7** |
+| `implementado com defeito` | 6 | **3** |
+| `não implementado` | 4 | **2** |
+| `documentado mas inexistente` | 3 | **3** |
+| **Total** | **15** | **15** |
+
+A documentação recebida registrava **1** regra de negócio: a fórmula
+anti-sobreposição (`Documentação Oficial SREC.md:67-75`). Atualize a coluna
+"Hoje" no mesmo PR que mudar a situação de qualquer regra.
