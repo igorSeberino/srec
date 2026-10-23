@@ -2,6 +2,12 @@ const AppError = require('../errors/AppError');
 const logger = require('../utils/logger');
 const { SQLSTATE_TO_HTTP, CONSTRAINT_OVERRIDES } = require('../errors/pgErrorCodes');
 const GENERIC_ERROR = Object.freeze({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' });
+// O express.json() (body-parser) sinaliza o erro em `type` e não traz `code`.
+const BODY_PARSER_ERRORS = new Map([
+  ['entity.parse.failed', { statusCode: 400, code: 'INVALID_JSON', message: 'O corpo da requisição não é um JSON válido.' }],
+  ['entity.too.large', { statusCode: 413, code: 'PAYLOAD_TOO_LARGE', message: 'O corpo da requisição excede o tamanho máximo permitido.' }],
+]);
+const translateBodyParserError = (err) => BODY_PARSER_ERRORS.get(err?.type);
 
 const translate = (err) => {
   if (err instanceof AppError) return { statusCode: err.statusCode, code: err.code, message: err.message, details: err.details };
@@ -16,7 +22,7 @@ const translate = (err) => {
 };
 
 const errorHandler = (err, req, res, _next) => {
-  const translated = translate(err);
+  const translated = translateBodyParserError(err) ?? translate(err);
   logger.error({
     method: req.method, path: req.originalUrl, statusCode: translated.statusCode,
     code: translated.code, sqlstate: err && err.code, constraint: err && err.constraint,
