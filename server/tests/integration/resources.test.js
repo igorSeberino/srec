@@ -32,24 +32,29 @@ describe('API de recursos', () => {
       expect((await pool.query('SELECT COUNT(*) AS n FROM resources')).rows[0].n).toBe('0');
     });
 
-    // BUG-10 e BUG-09 continuam abertos (#47). test.failing passa enquanto o
-    // bug existe e quebra no dia em que for corrigido: aí vira `it` normal.
-    test.failing('R-05 recusa tipo fora do enum, "sofa" → 400 (BUG-10, #47)', async () => {
-      const response = await api().post('/api/resources').send(resource({ type: 'sofa' }));
+    // BUG-10 e BUG-09 (#47): o service recusa antes de chegar ao banco.
+    it.each([
+      ['R-05 tipo fora do enum, "sofa" (BUG-10)', { type: 'sofa' }, 'INVALID_RESOURCE_TYPE'],
+      ['R-06 capacity 0 (BUG-09)', { capacity: 0 }, 'INVALID_CAPACITY'],
+      ['R-07 capacity negativa (BUG-09)', { capacity: -5 }, 'INVALID_CAPACITY'],
+      ['R-07b capacity fracionária', { capacity: 2.5 }, 'INVALID_CAPACITY'],
+      ['R-07c capacity não numérica, "abc"', { capacity: 'abc' }, 'INVALID_CAPACITY'],
+      ['R-07d capacity acima de 100', { capacity: 101 }, 'INVALID_CAPACITY'],
+    ])('%s → 400 sem gravar (#47)', async (_scenario, overrides, code) => {
+      const response = await api().post('/api/resources').send(resource(overrides));
 
       expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({ code });
+      expect((await pool.query('SELECT COUNT(*) AS n FROM resources')).rows[0].n).toBe('0');
     });
 
-    test.failing('R-06 recusa capacity 0 → 400 (BUG-09, #47)', async () => {
-      const response = await api().post('/api/resources').send(resource({ capacity: 0 }));
-
-      expect(response.status).toBe(400);
-    });
-
-    test.failing('R-07 recusa capacity negativa → 400 (BUG-09, #47)', async () => {
-      const response = await api().post('/api/resources').send(resource({ capacity: -5 }));
-
-      expect(response.status).toBe(400);
+    // Defesa em profundidade: mesmo quem grava direto no banco esbarra no CHECK
+    // da migration 004.
+    it.each([
+      ['R-07e tipo fora do enum', { type: 'sofa' }, 'resources_type_check'],
+      ['R-07f capacity 0', { capacity: 0 }, 'resources_capacity_check'],
+    ])('%s gravado direto no banco → CHECK recusa (#47)', async (_scenario, overrides, constraint) => {
+      await expect(insertResource(overrides)).rejects.toMatchObject({ code: '23514', constraint });
     });
   });
 
@@ -138,6 +143,22 @@ describe('API de recursos', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toMatchObject({ code: 'INVALID_NAME' });
+    });
+
+    it.each([
+      ['R-15c tipo fora do enum (BUG-10)', { type: 'sofa' }, 'INVALID_RESOURCE_TYPE'],
+      ['R-15d capacity 0 (BUG-09)', { capacity: 0 }, 'INVALID_CAPACITY'],
+      ['R-15e capacity negativa (BUG-09)', { capacity: -5 }, 'INVALID_CAPACITY'],
+      ['R-15f capacity fracionária', { capacity: 2.5 }, 'INVALID_CAPACITY'],
+      ['R-15g capacity não numérica, "abc"', { capacity: 'abc' }, 'INVALID_CAPACITY'],
+    ])('%s → 400 e o espaço não muda (#47)', async (_scenario, body, code) => {
+      const created = await insertResource();
+
+      const response = await api().put(`/api/resources/${created.id}`).send(body);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({ code });
+      expect((await api().get(`/api/resources/${created.id}`)).body).toMatchObject({ type: 'meeting_room', capacity: 8 });
     });
 
     it('R-16 id inexistente → 404', async () => {
