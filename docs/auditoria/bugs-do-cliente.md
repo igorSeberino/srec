@@ -21,8 +21,8 @@ o corrige.
 | BUG-06 | ALTO | Exclusão de espaço apaga reservas silenciosamente | BE-08 / FE-05 |
 | BUG-07 | ALTO | Horário da reserva desloca por falta de fuso | BE-07 |
 | BUG-08 | MÉDIO | Reserva no passado é aceita | BE-02 |
-| BUG-09 | MÉDIO | Capacidade inválida é aceita | BE-02 |
-| BUG-10 | MÉDIO | Tipo de espaço aceita qualquer string | BE-03 |
+| BUG-09 | MÉDIO | Capacidade inválida é aceita | BE-09 (#47) |
+| BUG-10 | MÉDIO | Tipo de espaço aceita qualquer string | BE-09 (#47) |
 | BUG-11 | MÉDIO | Servidor sobe com o banco quebrado | BE-08 / OPS-04 |
 | BUG-12 | MÉDIO | Queda do Postgres mata o processo | BE-08 |
 | BUG-13 | BAIXO | Duplo clique cria duas reservas | FE-03 |
@@ -260,7 +260,7 @@ um. `capacity: -5` passa pelo `||` e é gravado, porque a coluna não tem
 `CHECK`. O `min="1"` do input (`App.jsx:188`) é validação de navegador e não
 vale nada para quem chama a API direto.
 
-**Correção:** [BE-02](../specs/be-02-validate-reservation-window/implementacao.md).
+**Correção:** BE-09, issue #47 (PR #61). A spec BE-02 não cobre capacidade.
 
 ---
 
@@ -279,7 +279,7 @@ string. O frontend então renderiza assim:
 Tudo que não for exatamente `meeting_room` aparece como "Estação de Trabalho".
 Um espaço criado com `type: "auditorio"` mente para o usuário na tela.
 
-**Correção:** [BE-03](../specs/be-03-restrict-reservation-status/implementacao.md).
+**Correção:** BE-09, issue #47 (PR #61). A spec BE-03 só trata `status`.
 
 ---
 

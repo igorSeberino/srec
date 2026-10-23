@@ -69,22 +69,23 @@ individual, capacidade unitária) ou `meeting_room` (foco colaborativo,
 capacidade em grupo). A distinção vem da própria definição do produto
 (`Documentação Oficial SREC.md:9-11`).
 
-**Situação.** `implementado com defeito (BUG-10)`
+**Situação.** `implementado`
 
 **Evidência.** A interface só oferece os dois valores, a partir de
 `client/src/constants/domain.js:1-4`, e recusa outro antes do envio
-(`client/src/features/resources/validation.js:23-25`). A API aceita qualquer
-string: `server/src/services/resourceService.js:6` só verifica presença, e
-`server/src/config/initDb.js:8` declara `type VARCHAR(50) NOT NULL` com os
-valores válidos apenas em **comentário SQL**. Nenhuma migration acrescenta o
-`CHECK`. `POST /api/resources` com `{"type":"banana"}` responde `201`.
+(`client/src/features/resources/validation.js:23-25`). A API recusa com `400`
+`INVALID_RESOURCE_TYPE` no cadastro e na edição
+(`server/src/services/resourceService.js:15` e `:28`, enum em
+`server/src/domain/resourceType.js`), e o banco tem
+`resources_type_check` (`server/migrations/004_resource_type_capacity_check.sql`).
 
 Desde FE-01, um tipo desconhecido aparece na lista com o próprio nome
 (`client/src/constants/domain.js:17-21`), e não mais disfarçado de "Estação de
 Trabalho".
 
-**Trabalho na N2.** BUG-10 na issue #47. O `CHECK` é pendência declarada em
-[`docs/arquitetura/der.md`](../arquitetura/der.md).
+**Corrigido na N2.** BE-09 (issue #47, PR #61). Situação antes:
+`implementado com defeito (BUG-10)`: `POST /api/resources` com
+`{"type":"banana"}` respondia `201`.
 
 ---
 
@@ -92,20 +93,23 @@ Trabalho".
 
 Espaço com capacidade zero ou negativa não representa nada no mundo físico.
 
-**Situação.** `implementado com defeito (BUG-09)`
+**Situação.** `implementado`
 
-**Evidência.** `server/src/services/resourceService.js:5` só aplica o default
-`capacity = 1` quando o campo não vem; `capacity: 0` e `capacity: -5` chegam ao
-banco como estão, e `server/src/config/initDb.js:9` não tem `CHECK`. Mudou o
-sintoma: o código recebido trocava `0` por `1` em silêncio; agora grava `0`.
-A edição tem o mesmo comportamento (`server/src/models/resourceModel.js:29-30`).
+**Evidência.** A API aceita só inteiro de 1 a 100 e responde `400`
+`INVALID_CAPACITY` no cadastro e na edição
+(`server/src/services/resourceService.js:16` e `:29`, faixa em
+`server/src/domain/resourceType.js`). O banco tem
+`resources_capacity_check`, `CHECK (capacity BETWEEN 1 AND 100)`
+(`server/migrations/004_resource_type_capacity_check.sql`). O teto de 100 vem
+da spec da QA-02.
 
 O cliente recusa capacidade não inteira ou menor que 1
 (`client/src/features/resources/validation.js:27-31`), o que protege só quem
 usa a tela.
 
-**Trabalho na N2.** BUG-09 na issue #47. O `CHECK (capacity > 0)` é pendência
-declarada em [`docs/arquitetura/der.md`](../arquitetura/der.md).
+**Corrigido na N2.** BE-09 (issue #47, PR #61). Situação antes:
+`implementado com defeito (BUG-09)`: `capacity: 0` e `capacity: -5` eram
+gravados, no cadastro e na edição.
 
 ---
 
@@ -400,8 +404,8 @@ inquestionável. Levantar com `@igorSeberino`.
 
 | Regra | Situação hoje | Requisito | Spec da N2 |
 |---|---|---|---|
-| RN01 | implementado com defeito (BUG-10) | RF01, RF04 | issue #47 |
-| RN02 | implementado com defeito (BUG-09) | RF01, RF04 | issue #47; FE-03 no cliente |
+| RN01 | implementado | RF01, RF04 | BE-09 (**corrigido**, PR #61) |
+| RN02 | implementado | RF01, RF04 | BE-09 (**corrigido**, PR #61); FE-03 no cliente |
 | RN03 | implementado com defeito (BUG-01) | RF06 | BE-01 (**corrigido** no código, PR #41); migrations na subida em OPS-02 |
 | RN04 | implementado | RF06, RF09 | BE-03 fechou a ressalva |
 | RN05 | implementado | RF06 | BE-02 (**corrigido**, PR #41) |

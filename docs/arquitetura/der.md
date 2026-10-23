@@ -65,8 +65,8 @@ erDiagram
     resources {
         SERIAL id PK ""
         VARCHAR_100 name "NOT NULL"
-        VARCHAR_50 type "NOT NULL, CHECK pendente: ver 2.1"
-        INTEGER capacity "NOT NULL DEFAULT 1, CHECK pendente: ver 2.1"
+        VARCHAR_50 type "NOT NULL, CHECK IN workstation meeting_room [BE-09]"
+        INTEGER capacity "NOT NULL DEFAULT 1, CHECK entre 1 e 100 [BE-09]"
         TIMESTAMPTZ created_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
         TIMESTAMPTZ updated_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
     }
@@ -105,6 +105,12 @@ reservations_time_window_check
 -- BE-03: domínio fechado de status, RN07
 reservations_status_check
   CHECK (status IN ('scheduled', 'cancelled', 'completed'))
+
+-- BE-09: tipo e capacidade do espaço, RN01 e RN02
+resources_type_check
+  CHECK (type IN ('workstation', 'meeting_room'))
+resources_capacity_check
+  CHECK (capacity >= 1 AND capacity <= 100)
 ```
 
 Mais o `SET NOT NULL` e o `SET DEFAULT 'scheduled'` em `status`
@@ -145,21 +151,15 @@ estão no diagrama atual.
 
 | Pendência | Regra | Situação |
 |---|---|---|
-| `CHECK (type IN ('workstation','meeting_room'))` | RN01, BUG-10 | issue #47; prefixo `1761000007000` reservado em OPS-02 |
-| `CHECK (capacity > 0)` | RN02, BUG-09 | issue #47; mesmo prefixo |
 | `reservations.resource_id SET NOT NULL` | RN10 | nenhuma spec e nenhum prefixo reservado |
 | `ON DELETE CASCADE` → `ON DELETE RESTRICT` | RN09, BUG-06 | prefixo `1761000008000` reservado em OPS-02, sem spec. FE-05 (PR #44) avisa na interface; o PR #41 manteve a exclusão física |
 | Índices em `reservations(resource_id)` e `reservations(start_time)` | CS-09 | prefixo `1761000006000` reservado em OPS-02; o `EXCLUDE` já cria um índice GiST em `resource_id`, então falta medir com `EXPLAIN ANALYZE` se o B-tree compensa |
 | Aplicar as migrations na subida | RNF02, RNF15 | OPS-02 (#17) |
 
-SQL alvo das quatro primeiras, executado com sucesso sobre a `main` migrada no
+SQL alvo das duas primeiras, executado com sucesso sobre a `main` migrada no
 teste da seção 5:
 
 ```sql
-ALTER TABLE resources
-  ADD CONSTRAINT resources_type_check CHECK (type IN ('workstation', 'meeting_room'));
-ALTER TABLE resources
-  ADD CONSTRAINT resources_capacity_check CHECK (capacity > 0);
 ALTER TABLE reservations ALTER COLUMN resource_id SET NOT NULL;
 ALTER TABLE reservations DROP CONSTRAINT reservations_resource_id_fkey;
 ALTER TABLE reservations
@@ -246,16 +246,16 @@ gravada e sete violações tentadas direto no banco, por `psql`:
 | 2 | fim antes do início | RN05 | aceita | aceita | recusada (`reservations_time_window_check`) | recusada |
 | 3 | `status = 'banana'` | RN07 | aceita | aceita | recusada (`reservations_status_check`) | recusada |
 | 4 | `status = NULL` | RN07 | aceita | aceita | recusada (`NOT NULL`) | recusada |
-| 5 | `type = 'banana'` | RN01 | aceita | aceita | **aceita** | recusada (`resources_type_check`) |
-| 6 | `capacity = 0` | RN02 | aceita | aceita | **aceita** | recusada (`resources_capacity_check`) |
+| 5 | `type = 'banana'` | RN01 | aceita | aceita | recusada (`resources_type_check`, BE-09) | recusada |
+| 6 | `capacity = 0` | RN02 | aceita | aceita | recusada (`resources_capacity_check`, BE-09) | recusada |
 | 7 | reserva com `resource_id NULL` | RN10 | aceita | aceita | **aceita** | recusada (`NOT NULL`) |
 
 Com as pendências aplicadas, `DELETE FROM resources` de um espaço com reserva
 também passa a ser recusado (`ON DELETE RESTRICT`, RN09).
 
 O resultado se lê em três passos: o banco recebido recusava **0 de 7**; a
-`main` migrada recusa **4 de 7**; as pendências da seção 2.1 levam a **7 de
-7**. A coluna "Main, só o boot" é o motivo da observação 1: sem
+`main` migrada recusa **6 de 7** (4 até o PR #41, mais 2 com a BE-09); a
+pendência da seção 2.1 leva a **7 de 7**. A coluna "Main, só o boot" é o motivo da observação 1: sem
 `npm run db:migrate`, o ganho de integridade não chega ao banco. A API recusa
-as violações 2, 3, 4 e 7 por validação própria, mas a 1, sob concorrência, só
+as violações 2 a 7 por validação própria, mas a 1, sob concorrência, só
 a constraint garante.

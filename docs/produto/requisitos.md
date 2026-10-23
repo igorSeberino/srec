@@ -56,12 +56,12 @@ RF14 serem `documentado mas inexistente`.
 **História.** Como Operador, quero cadastrar uma estação de trabalho ou sala de
 reunião informando nome, tipo e capacidade, para que ela possa ser reservada.
 
-**Situação.** `implementado com defeito (BUG-09)`
+**Situação.** `implementado`
 
 **Evidência.** `POST /api/resources` em
 `server/src/routes/resourceRoutes.js:6` → `ResourceController.createResource`
 (`server/src/controllers/resourceController.js:5-7`) →
-`ResourceService.create` (`server/src/services/resourceService.js:5-8`) →
+`ResourceService.create` (`server/src/services/resourceService.js:13-18`) →
 `ResourceModel.create` (`server/src/models/resourceModel.js:4-12`). O
 formulário está em `client/src/features/resources/ResourceForm.jsx:58-102`,
 com validação no cliente em `client/src/features/resources/validation.js:14-34`.
@@ -72,25 +72,25 @@ com validação no cliente em `client/src/features/resources/validation.js:14-34
    responde `201` e o corpo traz a linha inteira, porque o `INSERT` usa
    `RETURNING *` (`server/src/models/resourceModel.js:8`).
 2. `POST /api/resources` sem `name` **ou** sem `type` responde `400` com
-   `code: "RESOURCE_FIELDS_REQUIRED"` (`resourceService.js:6`).
+   `code: "RESOURCE_FIELDS_REQUIRED"` (`resourceService.js:14`).
 3. `POST /api/resources` sem `capacity` responde `201` com `capacity: 1`: o
-   default do parâmetro em `resourceService.js:5`.
-4. **Falha hoje (BUG-09):** `POST` com `capacity: 0` ou `capacity: -5`
-   deveria responder `400`. Hoje responde `201` e grava o valor recebido: o
-   serviço não valida capacidade e o schema não tem `CHECK`
-   (`server/src/config/initDb.js:9`). Mudou o sintoma em relação ao código
-   recebido, que trocava `0` por `1` em silêncio; agora grava `0`.
-5. **Falha hoje (BUG-10):** `POST` com `type: "banana"` deveria responder
-   `400`; responde `201`. Ver RN01 em
+   default do parâmetro em `resourceService.js:13`.
+4. `POST` com `capacity` 0, negativa, fracionária, não numérica ou acima de
+   100 responde `400` com `code: "INVALID_CAPACITY"` e não grava
+   (`resourceService.js:16`, `server/src/domain/resourceType.js`).
+5. `POST` com `type` fora de `workstation`/`meeting_room` responde `400` com
+   `code: "INVALID_RESOURCE_TYPE"` (`resourceService.js:15`). Ver RN01 em
    [`docs/produto/overview.md`](overview.md).
 
 A interface barra os três casos antes do envio
 (`client/src/features/resources/validation.js:23-31`), mas isso protege só
 quem usa a tela.
 
-**Trabalho na N2.** BUG-09 e BUG-10 estão na issue #47. O `CHECK` de tipo e
-capacidade tem prefixo reservado em OPS-02 e é pendência declarada em
-[`docs/arquitetura/der.md`](../arquitetura/der.md).
+**Corrigido na N2.** BE-09 (issue #47, PR #61): validação no serviço e `CHECK`
+de tipo e capacidade no banco
+(`server/migrations/004_resource_type_capacity_check.sql`). Situação antes:
+`implementado com defeito (BUG-09, BUG-10)`: `capacity: 0` ou `-5` e
+`type: "banana"` respondiam `201` e eram gravados.
 
 ---
 
@@ -165,12 +165,12 @@ porque o `22P02` do Postgres caía no `catch` genérico do controller.
 **História.** Como Operador, quero corrigir nome, tipo ou capacidade de um
 espaço já cadastrado, para manter o cadastro fiel à realidade física.
 
-**Situação.** `implementado com defeito (BUG-09)`
+**Situação.** `implementado`
 
 **Evidência.** `PUT /api/resources/:id` em
 `server/src/routes/resourceRoutes.js:9` → `updateResource`
 (`resourceController.js:10`) → `ResourceService.update`
-(`resourceService.js:15-21`) → `ResourceModel.update`
+(`resourceService.js:25-33`) → `ResourceModel.update`
 (`resourceModel.js:26-35`), que usa `COALESCE` para manter os campos não
 enviados. A tela de edição existe: botão em
 `client/src/features/resources/ResourceListItem.jsx:40-46`, formulário em modo
@@ -187,16 +187,16 @@ enviados. A tela de edição existe: botão em
    e mantém `name` e `type` (`resourceModel.js:29-30`).
 4. `PUT` com corpo vazio responde `400` com `code: "EMPTY_UPDATE"`, e com
    `name` em branco responde `400` com `code: "INVALID_NAME"`
-   (`resourceService.js:16-17`).
-5. **Falha hoje (BUG-09 e BUG-10):** `PUT` com `capacity: 0` ou com
-   `type: "banana"` deveria responder `400`; responde `200` e grava, pelos
-   mesmos motivos de RF01.
+   (`resourceService.js:26-27`).
+5. `PUT` com `capacity` inválida ou `type` fora do enum responde `400`
+   (`INVALID_CAPACITY` / `INVALID_RESOURCE_TYPE`) e o espaço não muda
+   (`resourceService.js:28-29`).
 
 **Corrigido na N2.** BE-05 (PR #41) e FE-05 (PR #44). Situação no código
 recebido: `implementado com defeito (BUG-05)`: corpo parcial respondia `500`,
 porque `name` virava `NULL`; e nenhuma tela chamava o endpoint (BUG-15).
-
-**Trabalho na N2.** BUG-09 e BUG-10 estão na issue #47.
+BE-09 (issue #47, PR #61) fechou BUG-09 e BUG-10 na edição: `capacity: 0` e
+`type: "banana"` respondiam `200` e eram gravados.
 
 ---
 
@@ -838,9 +838,9 @@ formato das migrations do #41 (`.sql`) e o previsto em OPS-02 (`.js` do
 domínio sejam constraints no banco, para que nenhum caminho de código consiga
 gravar dado inválido.
 
-**Situação.** `implementado com defeito (BUG-10)`
+**Situação.** `implementado com defeito (resource_id sem NOT NULL)`
 
-**Evidência.** Com as migrations aplicadas, o banco tem três constraints de
+**Evidência.** Com as migrations aplicadas, o banco tem cinco constraints de
 domínio e um `NOT NULL` novo, conferidos com `pg_get_constraintdef`:
 
 * `reservations_no_overlap`, `EXCLUDE` sobre `tstzrange` (BE-01,
@@ -849,14 +849,13 @@ domínio e um `NOT NULL` novo, conferidos com `pg_get_constraintdef`:
   `server/migrations/002_reservation_time_window_check.sql`);
 * `reservations_status_check`, `CHECK` com os três status (BE-03,
   `server/migrations/003_reservation_status_check.sql`);
+* `resources_type_check`, `CHECK (type IN ('workstation', 'meeting_room'))`, e
+  `resources_capacity_check`, `CHECK (capacity BETWEEN 1 AND 100)` (BE-09,
+  `server/migrations/004_resource_type_capacity_check.sql`);
 * `status` passa a `NOT NULL` (BE-01).
 
-Continuam sem proteção no banco:
+Continua sem proteção no banco:
 
-* `type VARCHAR(50) NOT NULL` (`server/src/config/initDb.js:8`): aceita
-  qualquer string. Base de BUG-10.
-* `capacity INTEGER NOT NULL DEFAULT 1` (`:9`): aceita `0` e negativos. Base
-  de BUG-09.
 * `resource_id` (`:16`) segue sem `NOT NULL`. A API barra pela checagem de
   campos obrigatórios (`reservationService.js:10-11`), mas o banco aceita.
 
@@ -866,8 +865,8 @@ Continuam sem proteção no banco:
    banco. Atendido com as migrations.
 2. `INSERT` direto por `psql` com `status = 'banana'` é rejeitado. Atendido
    com as migrations.
-3. `INSERT` direto por `psql` com `capacity = 0` é rejeitado. **Não
-   atendido.**
+3. `INSERT` direto por `psql` com `capacity = 0` é rejeitado. Atendido
+   com a migration `004` (BE-09).
 4. `INSERT` direto por `psql` de duas reservas sobrepostas no mesmo recurso,
    ambas com status diferente de `cancelled`, é rejeitado na segunda.
    Atendido com as migrations.
@@ -880,8 +879,9 @@ pela API não é integridade, é validação. O teste tem de furar a aplicação
 **Corrigido na N2.** Parcialmente, por BE-01, BE-02 e BE-03 (PR #41).
 Situação no código recebido: `não implementado`, com zero constraints.
 
-**Trabalho na N2.** BUG-09 e BUG-10 na issue #47. As pendências estão
-declaradas em [`docs/arquitetura/der.md`](../arquitetura/der.md).
+BE-09 (issue #47, PR #61) acrescentou os `CHECK` de tipo e capacidade (BUG-09,
+BUG-10). A pendência que resta está declarada em
+[`docs/arquitetura/der.md`](../arquitetura/der.md).
 
 ---
 
@@ -1271,10 +1271,10 @@ Situação no código recebido: `não implementado`.
 
 | Requisito | Situação hoje | Implementado em | Spec da N2 |
 |---|---|---|---|
-| RF01 | implementado com defeito (BUG-09) | `resourceService.js:5-8`, `resourceModel.js:4-12` | issue #47 |
+| RF01 | implementado | `resourceService.js:13-18`, `resourceModel.js:4-12`, `resourceType.js` | BE-09 (**corrigido**, PR #61) |
 | RF02 | implementado | `resourceService.js:9`, `resourceModel.js:14-18` | REQ-03 (descrição) |
 | RF03 | implementado | `validateIdParam.js:2-9`, `resourceService.js:10-14` | BE-04, BE-05 (**corrigido**, PR #41) |
-| RF04 | implementado com defeito (BUG-09) | `resourceService.js:15-21`, `resourceModel.js:26-35` | BE-05, FE-05 (**corrigido** BUG-05 e BUG-15); issue #47 |
+| RF04 | implementado | `resourceService.js:25-33`, `resourceModel.js:26-35` | BE-05, FE-05 (**corrigido** BUG-05 e BUG-15); BE-09 (**corrigido** BUG-09 e BUG-10, PR #61) |
 | RF05 | implementado com defeito (BUG-06) | `resourceService.js:22-26`, `initDb.js:16`, `CascadeDeleteDialog.jsx` | FE-05 (aviso, PR #44); `RESTRICT` pendente |
 | RF06 | implementado com defeito (BUG-01) | `reservationService.js:9-25`, `001_reservation_no_overlap.sql` | BE-01, BE-02, BE-07, FE-02, FE-03 (**corrigidos** no código); migrations não aplicadas na subida |
 | RF07 | implementado | `reservationService.js:26`, `reservationModel.js:15-19` | — |
@@ -1292,7 +1292,7 @@ Situação no código recebido: `não implementado`.
 | RF19 | implementado | `ReservationListItem.jsx:21-37`, `reservationStatus.js` | BE-03 (**corrigido**, PR #41) |
 | RNF01 | implementado | `database.js:5-8` | — |
 | RNF02 | implementado com defeito (CS-06) | `server/migrations/`, `scripts/migrate.js`, `initDb.js` | OPS-02 (#17) |
-| RNF03 | implementado com defeito (BUG-10) | `server/migrations/001` a `003` | BE-01, BE-02, BE-03 (parcial); issue #47 |
+| RNF03 | implementado com defeito (resource_id sem NOT NULL) | `server/migrations/001` a `004` | BE-01, BE-02, BE-03, BE-09 (parcial) |
 | RNF04 | implementado | `0001_timestamptz.sql`, `utils/datetime.js`, `lib/datetime.js` | BE-07, FE-02 (**corrigido**) |
 | RNF05 | implementado com defeito (CS-10) | `server/src/services/`, `server/tests/integration/` | QA-01, OPS-03 |
 | RNF06 | implementado | `database.js:13-15`, `index.js:20-25`, `healthRoutes.js` | BE-08 (**corrigido**, PR #41) |
