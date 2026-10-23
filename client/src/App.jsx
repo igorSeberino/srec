@@ -33,8 +33,7 @@ function App() {
           <ResourcesPanel
             resources={data.resources}
             loading={data.loading}
-            onCreate={data.resourceActions.createResource}
-            onDelete={data.resourceActions.removeResource}
+            actions={data.resourceActions}
             onSuccess={onSuccess}
             onError={onError}
           />

@@ -287,3 +287,55 @@ header {
   background-color: #dcfce7;
   color: #166534;
 }
+
+/* Confirmation dialog (ConfirmDialog) */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.dialog {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  max-width: 32rem;
+  width: 100%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.dialog-list {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+.dialog-hint {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.dialog-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  color: #991b1b;
+}
+
+.btn-outline-primary {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}

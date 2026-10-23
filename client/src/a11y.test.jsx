@@ -27,7 +27,7 @@ const RESERVATION = {
 describe('acessibilidade dos formulários', () => {
   // FAILS BEFORE (CS-13): getByLabelText finds nothing.
   it('os 3 campos do formulário de espaço têm rótulo associado', () => {
-    render(<ResourceForm onCreate={noop} onSuccess={noop} onError={noop} />);
+    render(<ResourceForm onSubmit={noop} onSuccess={noop} onError={noop} />);
     expect(screen.getByLabelText('Nome do Espaço / Estação')).toHaveAttribute('type', 'text');
     expect(screen.getByLabelText('Tipo').tagName).toBe('SELECT');
     expect(screen.getByLabelText('Capacidade (pessoas)')).toHaveAttribute('type', 'number');
@@ -46,8 +46,8 @@ describe('acessibilidade dos formulários', () => {
   it('nenhum id de campo é duplicado no documento', () => {
     const { container } = render(
       <>
-        <ResourceForm idPrefix="a" onCreate={noop} onSuccess={noop} onError={noop} />
-        <ResourceForm idPrefix="b" onCreate={noop} onSuccess={noop} onError={noop} />
+        <ResourceForm idPrefix="a" onSubmit={noop} onSuccess={noop} onError={noop} />
+        <ResourceForm idPrefix="b" onSubmit={noop} onSuccess={noop} onError={noop} />
         <ReservationForm resources={RESOURCES} onCreate={noop} onSuccess={noop} onError={noop} />
       </>
     );
