@@ -39,7 +39,7 @@ Legenda das colunas de resultado:
 |---|---|---|---|---|
 | P-01 | Preencher o cabeçalho desta execução, inclusive os dois fusos | Todos os campos preenchidos. Sem fuso registrado, os passos B-06 e C-08 não são comparáveis | | |
 | P-02 | Subir o ambiente: `docker compose up -d --wait` (OPS-01). Sem OPS-01, seguir os 7 passos manuais do `README.md` | A stack sobe sem erro. Registrar quantos comandos foram necessários | | |
-| P-03 | `curl -s http://localhost:5000/` | `SREC Coworking API is running...` | | |
+| P-03 | `curl -s http://localhost:5000/` | JSON `{"name":"SREC Coworking API","status":"running","health":"/health"}` | | |
 | P-04 | Zerar a base: `TRUNCATE TABLE reservations, resources RESTART IDENTITY CASCADE;` | Comando aceito. `GET /api/resources` e `GET /api/reservations` devolvem `[]` | | |
 | P-05 | Abrir `http://localhost:5173` com o console do navegador aberto (F12) | A página carrega. Registrar **todo** erro ou aviso de console da execução inteira | | |
 
@@ -101,16 +101,16 @@ não protege a API.
 |---|---|---|---|---|---|---|
 | C-01 | BUG-13 | Clicar **duas vezes rápido** em "Confirmar Reserva" com o formulário preenchido | **Duas** reservas idênticas na lista; o botão não desabilita | **Uma** reserva; o botão desabilita durante o envio | | |
 | C-02 | BUG-01 | Abrir a aplicação em duas abas, preencher o mesmo horário no mesmo espaço nas duas e enviar quase junto | **Duas** reservas sobrepostas aceitas | Uma aceita, a outra recusada com mensagem de conflito | | |
-| C-03 | BUG-02 | `API` `curl -i -X POST .../api/reservations -d '{"resource_id":1,"user_name":"t","start_time":"2026-11-10T11:00:00Z","end_time":"2026-11-10T09:00:00Z"}'` | `201`, e a reserva aparece na lista sem bloquear ninguém (reserva fantasma) | `400` com motivo de janela inválida | | |
-| C-04 | BUG-03 | `API` `curl -i -X PATCH .../api/reservations/1/status -d '{"status":"banana"}'` e recarregar a tela | `200`; a etiqueta mostra `banana` sem estilo e a reserva fica **sem nenhum botão de ação** | `400`; o status permanece `scheduled` | | |
+| C-03 | BUG-02 | `API` `curl -i -X POST http://localhost:5000/api/reservations -H 'Content-Type: application/json' -d '{"resource_id":1,"user_name":"t","start_time":"2026-11-10T11:00:00Z","end_time":"2026-11-10T09:00:00Z"}'` | `201`, e a reserva aparece na lista sem bloquear ninguém (reserva fantasma) | `400` com motivo de janela inválida | | |
+| C-04 | BUG-03 | `API` `curl -i -X PATCH http://localhost:5000/api/reservations/1/status -H 'Content-Type: application/json' -d '{"status":"banana"}'` e recarregar a tela | `200`; a etiqueta mostra `banana` sem estilo e a reserva fica **sem nenhum botão de ação** | `400`; o status permanece `scheduled` | | |
 | C-05 | BUG-04 | `API` `curl -i http://localhost:5000/api/resources/abc` | `500 {"error":"Internal server error"}` | `400`, indicando que o id precisa ser numérico | | |
-| C-06 | BUG-05 | `API` `curl -i -X PUT .../api/resources/1 -d '{"capacity":4}'` | `500` | `200` com só a capacidade alterada, ou `400` explicando que o corpo precisa ser completo — **nunca 500** | | |
+| C-06 | BUG-05 | `API` `curl -i -X PUT http://localhost:5000/api/resources/1 -H 'Content-Type: application/json' -d '{"capacity":4}'` | `500` | `200` com só a capacidade alterada, ou `400` explicando que o corpo precisa ser completo — **nunca 500** | | |
 | C-07 | BUG-06 | Criar um espaço, criar **três** reservas nele, excluir o espaço confirmando o diálogo, e abrir a aba "Agendamentos" | As três reservas **desapareceram**, e o diálogo não avisou nada sobre elas | O diálogo informa quantas reservas serão afetadas, ou a exclusão é recusada / vira desativação | | |
 | C-08 | BUG-07 | Criar reserva para amanhã às **14:00**, ler o horário exibido, e comparar com `SELECT start_time FROM reservations;` no banco | Os três valores (digitado, exibido, gravado) **não** coincidem. Registrar a diferença em horas | Os três coincidem | | |
 | C-09 | BUG-08 | Criar reserva com início **ontem** | Aceita | `400` | | |
-| C-10 | BUG-09 | `API` `curl -i -X POST .../api/resources -d '{"name":"X","type":"workstation","capacity":-5}'` e depois com `"capacity":0` | `-5` é **gravado**; `0` vira `1` silenciosamente | `400` nos dois casos | | |
+| C-10 | BUG-09 | `API` `curl -i -X POST http://localhost:5000/api/resources -H 'Content-Type: application/json' -d '{"name":"X","type":"workstation","capacity":-5}'` e depois com `"capacity":0` | `-5` é **gravado**; `0` vira `1` silenciosamente | `400` nos dois casos | | |
 | C-11 | BUG-10 | `API` criar espaço com `"type":"auditorio"` e observar a lista na tela | Aparece como "**Estação de Trabalho**" — a tela mente | `400` | | |
-| C-12 | BUG-11 | Parar o Postgres (`docker compose stop db`) e subir o servidor | O servidor sobe anunciando "Server is running on port 5000" e **toda** requisição devolve 500 | O servidor **não** sobe, ou sobe e reporta a falha num endpoint de saúde | | |
+| C-12 | BUG-11 | Parar o Postgres (`docker compose stop postgres`) e subir o servidor | O servidor sobe anunciando "Server is running on port 5000" e **toda** requisição devolve 500 | O servidor **não** sobe, ou sobe e reporta a falha num endpoint de saúde | | |
 | C-13 | BUG-12 | Com o servidor rodando e funcionando, parar o Postgres e esperar 30 s | O processo do servidor **morre** | O processo sobrevive e registra o erro; volta a funcionar quando o banco retorna | | |
 | C-14 | BUG-14 | Duas ações bem-sucedidas em sequência rápida (ver A-10) | A segunda mensagem desaparece antes dos 4 s | Cada mensagem dura seus 4 s; nenhum aviso de `setState` após desmontagem no console | | |
 | C-15 | BUG-15 | Tentar renomear um espaço pela interface (ver A-15) | Impossível: só apagar e recriar — e apagar dispara C-07 | Existe ação de editar que chama `PUT /api/resources/:id` | | |
@@ -123,7 +123,7 @@ não protege a API.
 | D-02 | Percorrer o formulário "Novo Agendamento" usando **só** a tecla Tab | Todos os 4 campos e o botão são alcançáveis, na ordem visual, e o foco é visível em cada um | | | |
 | D-03 | Parar com o Tab em cada um dos três botões de ação de uma reserva e observar o nome anunciado | Hoje: só existe `title` (dica de mouse), sem `aria-label` — para leitor de tela são botões sem nome. Depois de FE-04: cada botão tem nome acessível | | | |
 | D-04 | Revisar o console do navegador referente à execução inteira | Registrar **todo** erro e aviso, com o texto. Alvo após FE-04: nenhum | | | |
-| D-05 | Parar o container do backend (`docker compose stop api`) e recarregar a página | Alerta vermelho "Falha ao carregar recursos"; a interface continua navegável, apenas vazia — não tela branca | | | |
+| D-05 | Parar o container do backend (`docker compose stop server`) e recarregar a página | Alerta vermelho "Falha ao carregar recursos"; a interface continua navegável, apenas vazia — não tela branca | | | |
 
 ## Resumo da execução
 
