@@ -10,8 +10,12 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.js\"",
     "test": "jest --selectProjects unit",
+    "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration --runInBand",
-    "test:all": "jest",
+    "test:all": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
+    "db:test:up": "docker compose -f docker-compose.test.yml up -d --wait",
+    "db:test:down": "docker compose -f docker-compose.test.yml down -v",
     "db:migrate": "node scripts/migrate.js"
   },
   "keywords": [],
