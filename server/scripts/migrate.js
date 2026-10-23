@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { getEnv } = require('../src/config/env');
+
+getEnv();
 const { pool } = require('../src/config/database');
 
 const directory = path.join(__dirname, '..', 'migrations');

@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-require('dotenv').config();
 const { APP_TIMEZONE } = require('./time');
 
 const pool = new Pool({

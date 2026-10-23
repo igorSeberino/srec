@@ -1,10 +1,21 @@
-require('dotenv').config();
+const { getEnv, ConfigError } = require('./config/env');
+
+// Falha rápida: configuração inválida impede o boot e nomeia cada variável errada.
+let env;
+try {
+  env = getEnv();
+} catch (err) {
+  if (!(err instanceof ConfigError) || require.main !== module) throw err;
+  console.error(`\n[boot] ${err.message}\n`);
+  process.exit(1);
+}
+
 const { APP_TIMEZONE } = require('./config/time');
 process.env.TZ = process.env.TZ || APP_TIMEZONE;
 const createApp = require('./app');
 const { pool } = require('./config/database');
 
-const PORT = Number(process.env.PORT || 5000);
+const PORT = env.port;
 const app = createApp();
 
 async function startServer() {
