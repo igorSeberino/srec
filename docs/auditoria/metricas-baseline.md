@@ -87,41 +87,42 @@ com a fórmula errada.
 
 ## Tabela consolidada
 
-| # | Métrica | Baseline | Meta da N2 | Fim da N2 |
-|---|---|---|---|---|
-| M-01 | Cobertura de statements, backend | **6,14 %** | ≥ 70 % | *a medir* |
-| M-02 | Cobertura de branches, backend | **0 %** | ≥ 60 % | *a medir* |
-| M-03 | Cobertura de funções, backend | **3,57 %** | ≥ 75 % | *a medir* |
-| M-04 | Arquivos de teste | **1** | ≥ 8 | *a medir* |
-| M-05 | Casos de teste | **2** | ≥ 60 | *a medir* |
-| M-06 | Cobertura dos controllers | **0 %** | ≥ 80 % | *a medir* |
-| M-07 | Cobertura das rotas | **0 %** | 100 % | *a medir* |
-| M-08 | Endpoints exercitados por teste | **0 de 10** | 10 de 10 | *a medir* |
-| M-09 | Erros de ESLint, server | **0** | 0 | *a medir* |
-| M-10 | Erros de ESLint, client | **0** | 0 | *a medir* |
-| M-11 | Regras de qualidade no ESLint | **0** | ≥ 6 | *a medir* |
-| M-12 | Bugs CRÍTICO abertos | **2** | 0 | *a medir* |
-| M-13 | Bugs ALTO abertos | **5** | 0 | *a medir* |
-| M-14 | Bugs MÉDIO abertos | **5** | ≤ 1 | *a medir* |
-| M-15 | Bugs BAIXO abertos | **3** | ≤ 1 | *a medir* |
-| M-16 | Code smells ALTO abertos | **4** | 0 | *a medir* |
-| M-17 | Blocos `try/catch` duplicados | **10** | 0 | *a medir* |
-| M-18 | Maior arquivo `.jsx`, em linhas | **351** | ≤ 120 | *a medir* |
-| M-19 | Linhas de `App.jsx` | **351** | ≤ 60 | *a medir* |
-| M-20 | Constraints de integridade no schema | **0** | ≥ 4 | *a medir* |
-| M-21 | Índices além das PKs | **0** | ≥ 2 | *a medir* |
-| M-22 | Migrations versionadas | **0** | ≥ 5 | *a medir* |
-| M-23 | Passos manuais para subir o sistema | **7** | 1 | *a medir* |
-| M-24 | Endpoints documentados vs implementados | **5 de 10** | 10 de 10 | *a medir* |
-| M-25 | Divergências doc vs código | **12** | 0 | *a medir* |
-| M-26 | `<label>` sem `htmlFor` | **7** | 0 | *a medir* |
-| M-27 | Supressões `eslint-disable` | **2** | 0 | *a medir* |
-| M-28 | Arquivos placeholder de 0 byte | **3** | 0 | *a medir* |
-| M-29 | Testes de frontend | **0** | ≥ 1 | *a medir* |
+| # | Métrica | Baseline | Meta da N2 |
+|---|---|---|---|
+| M-01 | Cobertura de statements, backend | **6,14 %** | ≥ 70 % |
+| M-02 | Cobertura de branches, backend | **0 %** | ≥ 60 % |
+| M-03 | Cobertura de funções, backend | **3,57 %** | ≥ 75 % |
+| M-04 | Arquivos de teste | **1** | ≥ 8 |
+| M-05 | Casos de teste | **2** | ≥ 60 |
+| M-06 | Cobertura dos controllers | **0 %** | ≥ 80 % |
+| M-07 | Cobertura das rotas | **0 %** | 100 % |
+| M-08 | Endpoints exercitados por teste | **0 de 10** | 10 de 10 |
+| M-09 | Erros de ESLint, server | **0** | 0 |
+| M-10 | Erros de ESLint, client | **0** | 0 |
+| M-11 | Regras de qualidade no ESLint | **0** | ≥ 6 |
+| M-12 | Bugs CRÍTICO abertos | **2** | 0 |
+| M-13 | Bugs ALTO abertos | **5** | 0 |
+| M-14 | Bugs MÉDIO abertos | **5** | ≤ 1 |
+| M-15 | Bugs BAIXO abertos | **3** | ≤ 1 |
+| M-16 | Code smells ALTO abertos | **4** | 0 |
+| M-17 | Blocos `try/catch` duplicados | **10** | 0 |
+| M-18 | Maior arquivo `.jsx`, em linhas | **351** | ≤ 120 |
+| M-19 | Linhas de `App.jsx` | **351** | ≤ 60 |
+| M-20 | Constraints de integridade no schema | **0** | ≥ 4 |
+| M-21 | Índices além das PKs | **0** | ≥ 2 |
+| M-22 | Migrations versionadas | **0** | ≥ 5 |
+| M-23 | Passos manuais para subir o sistema | **7** | 1 |
+| M-24 | Endpoints documentados vs implementados | **5 de 10** | 10 de 10 |
+| M-25 | Divergências doc vs código | **12** | 0 |
+| M-26 | `<label>` sem `htmlFor` | **7** | 0 |
+| M-27 | Supressões `eslint-disable` | **2** | 0 |
+| M-28 | Arquivos placeholder de 0 byte | **3** | 0 |
+| M-29 | Testes de frontend | **0** | ≥ 1 |
 
-A coluna "Fim da N2" é preenchida por
-[QA-04](../specs/qa-04-before-after-report/implementacao.md) e vira o material
-central do pitch.
+A comparação antes/depois, com a coluna medida no fim da entrega, o comando que
+reproduz cada medição e o roteiro do pitch está em
+[`relatorio-antes-depois.md`](relatorio-antes-depois.md). Este documento
+permanece congelado no commit `8431181`: é a fotografia do recebimento.
 
 ### Por que as metas são essas
 
