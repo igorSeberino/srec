@@ -1,33 +1,28 @@
-const express = require('express');
-const cors = require('cors');
 require('dotenv').config();
-
+const { APP_TIMEZONE } = require('./config/time');
+process.env.TZ = process.env.TZ || APP_TIMEZONE;
+const createApp = require('./app');
 const initDb = require('./config/initDb');
-const resourceRoutes = require('./routes/resourceRoutes');
-const reservationRoutes = require('./routes/reservationRoutes');
+const { pool } = require('./config/database');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT || 5000);
+const app = createApp();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use('/api/resources', resourceRoutes);
-app.use('/api/reservations', reservationRoutes);
-
-// Root Endpoint
-app.get('/', (req, res) => {
-  res.send('SREC Coworking API is running...');
-});
-
-// Initialize DB and start server
-const startServer = async () => {
+async function startServer() {
   await initDb();
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-};
+  const server = app.listen(PORT, () => console.log(`[boot] SREC ouvindo na porta ${PORT}`));
+  const shutdown = () => server.close(() => pool.end(() => process.exit(0)));
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+  return server;
+}
 
-startServer();
+if (require.main === module) {
+  startServer().catch(async (err) => {
+    console.error('[boot] não foi possível garantir o schema; abortando', err.message);
+    await pool.end().catch(() => {});
+    process.exit(1);
+  });
+}
+
+module.exports = app;
