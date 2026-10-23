@@ -116,7 +116,8 @@ não-conformidade óbvia queima o ciclo.
 
 **6. PR** — `git push -u origin <branch>`, corpo a partir de
 `tbd-flow/templates/pr-body.md`, `--base main`. Título igual ao título da issue.
-Merge exige 1 aprovação do QA (Igor) + CI verde.
+Merge exige 1 aprovação do QA (Igor) + CI verde. PR de autoria do Igor é
+aprovado pelo revisor substituto, Adrian (`@adrian-cesar`).
 
 ## Fatos desta base que te poupam erro
 

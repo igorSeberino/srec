@@ -973,7 +973,7 @@ git commit -m "docs(qa): registrar cobertura de 100% da camada de domínio"
 git push -u origin test/domain-rule-tests
 # PR: "QA-02 — Testes de regra de domínio"
 # Corpo: colar as três tabelas (O, W, S) e a contagem de 0 → 100 casos.
-# Revisor obrigatório: @igorSeberino (QA). Fecha a issue #<a definir>.
+# Revisor obrigatório: @adrian-cesar (revisor substituto — o autor é o próprio QA). Fecha a issue #<a definir>.
 ```
 
 Coordenação com BE-06 e BE-03: se o Backend já tiver criado os módulos de

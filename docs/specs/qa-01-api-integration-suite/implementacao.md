@@ -1390,7 +1390,7 @@ git commit -m "test(server): exigir 80% de statements e 70% de branches no gate"
 git push -u origin test/api-integration-suite
 # PR: "QA-01 — Suíte de integração da API com Supertest"
 # Corpo: colar a tabela de casos, a contagem antes/depois e a saída do passo 7.
-# Revisor obrigatório: @igorSeberino (QA). Fecha a issue #<a definir>.
+# Revisor obrigatório: @adrian-cesar (revisor substituto — o autor é o próprio QA). Fecha a issue #<a definir>.
 ```
 
 Ordem de merge combinada com o time: **QA-01 entra antes de BE-01..BE-04**, com

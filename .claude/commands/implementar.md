@@ -111,7 +111,8 @@ Dispare o subagent `maintainer` com um prompt que contenha, explicitamente:
    achados **antes** de abrir o PR.
 8. `git push -u origin <branch>` e `gh pr create --base main`, título igual ao da
    issue, corpo a partir de `.claude/skills/tbd-flow/templates/pr-body.md`, com
-   `Closes #<n>` e `@igorSeberino` como reviewer.
+   `Closes #<n>` e `@igorSeberino` como reviewer (`@adrian-cesar`, se o autor
+   for o próprio Igor).
 
 ## 5. Escopo: a regra que não se negocia
 
