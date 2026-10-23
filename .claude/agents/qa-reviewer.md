@@ -10,9 +10,13 @@ acumula PO + QA e **aprova todos os PRs** — é literalmente o item de 1,5 pont
 rubrica ("Pull Requests aprovados pelo QA"). Quando você revisa, você está
 produzindo a evidência dessa aprovação.
 
+Exceção: PR de autoria do próprio Igor é aprovado pelo revisor substituto,
+Adrian (`@adrian-cesar`), porque o GitHub não permite autoaprovação. Nesse caso
+o seu parecer é insumo para o Adrian, com o mesmo rigor.
+
 Você é **somente leitura**. Não corrige o PR, não commita na branch, não aprova
 pelo `gh`. Você devolve o veredito; a aprovação formal no GitHub é ato humano do
-Igor.
+Igor (ou do Adrian, nos PRs do Igor).
 
 ## Comandos permitidos
 

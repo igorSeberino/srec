@@ -1,17 +1,17 @@
-# DER do SREC — real e alvo
+# DER do SREC — recebido e atual
 
-Dois diagramas. O primeiro é o banco que recebemos; o segundo é o banco depois
-das migrations que as specs da N2 se comprometem a entregar. A diferença entre
-eles é a entrega de integridade desta etapa, e o que ficou de fora está
-declarado na seção 2.1.
+Dois diagramas. O primeiro é o banco que recebemos do grupo anterior; o
+segundo é o banco da `main` depois das migrations do backend da N2 (PR #41). A
+diferença entre eles é a entrega de integridade desta etapa, e o que ficou de
+fora está declarado na seção 2.1.
 
-Fonte de verdade do diagrama real: `server/src/config/initDb.js:4-24`. Fonte de
-verdade do diagrama alvo: o SQL das specs BE-01, BE-02, BE-03 e BE-07, na ordem
-da tabela de prefixos de
-[OPS-02](../specs/ops-02-versioned-migrations/implementacao.md), que é a casa
-canônica da ordem de schema do projeto.
+Fonte de verdade do diagrama recebido: `server/src/config/initDb.js:4-24` no
+commit `8431181` (`git show 8431181:server/src/config/initDb.js`). Fonte de
+verdade do diagrama atual: `server/src/config/initDb.js` da `main` mais as
+quatro migrations de `server/migrations/`, conferidas com
+`pg_get_constraintdef` num PostgreSQL 16.
 
-## 1. DER real — o schema como ele é hoje
+## 1. DER recebido — o schema do código entregue
 
 ```mermaid
 erDiagram
@@ -38,39 +38,25 @@ erDiagram
     }
 ```
 
-`resource_id` e `status` **aceitam `NULL`** (`initDb.js:16` e `:20` não
-declaram `NOT NULL`). É o que sustenta as regras RN10 e RN07 de
-[`docs/produto/overview.md`](../produto/overview.md).
+No schema recebido, `resource_id` e `status` **aceitavam `NULL`**, e não havia:
 
-O que **não** aparece no diagrama porque não existe no banco:
-
-* nenhum `CHECK`: os valores válidos de `type` e `status` estão em
-  **comentário SQL** (`initDb.js:8`, `:20`), que o banco ignora;
+* nenhum `CHECK`: os valores válidos de `type` e `status` estavam em
+  **comentário SQL**, que o banco ignora;
 * nenhum `UNIQUE`;
-* nenhum `EXCLUDE`: a regra anti-sobreposição (RN03) vive só como `SELECT` em
-  `server/src/models/reservationModel.js:49-61`;
-* nenhum índice além das duas chaves primárias, embora as consultas de reserva
-  filtrem ou ordenem por `resource_id` e `start_time`
-  (`reservationModel.js:15`, `:27`, `:52-55`);
+* nenhum `EXCLUDE`: a regra anti-sobreposição (RN03) vivia só como `SELECT`;
+* nenhum índice além das duas chaves primárias;
 * nenhuma coluna `is_active`;
 * nenhuma coluna `user_id` e nenhuma tabela de usuários.
 
-Verificação, a qualquer momento:
+Verificação sobre o código recebido:
 
 ```bash
-grep -cE "CHECK|UNIQUE|EXCLUDE" server/src/config/initDb.js   # 0
-grep -ci "CREATE INDEX" server/src/config/initDb.js           # 0
-grep -c "NOT NULL" server/src/config/initDb.js                # 6
+git show 8431181:server/src/config/initDb.js | grep -cE "CHECK|UNIQUE|EXCLUDE"   # 0
+git show 8431181:server/src/config/initDb.js | grep -ci "CREATE INDEX"           # 0
+git show 8431181:server/src/config/initDb.js | grep -c "NOT NULL"                # 6
 ```
 
-As 6 linhas com `NOT NULL` são `resources.name`, `resources.type`,
-`resources.capacity`, `reservations.user_name`, `reservations.start_time` e
-`reservations.end_time` (`initDb.js:7-9` e `:17-19`).
-
-## 2. DER alvo — o schema depois das migrations da N2
-
-Só entra neste diagrama o que alguma spec se compromete a entregar, com o SQL
-escrito. Cada anotação traz a spec de origem.
+## 2. DER atual — a `main` depois das migrations
 
 ```mermaid
 erDiagram
@@ -81,8 +67,8 @@ erDiagram
         VARCHAR_100 name "NOT NULL"
         VARCHAR_50 type "NOT NULL, CHECK pendente: ver 2.1"
         INTEGER capacity "NOT NULL DEFAULT 1, CHECK pendente: ver 2.1"
-        TIMESTAMPTZ created_at "DEFAULT now() [BE-07]"
-        TIMESTAMPTZ updated_at "DEFAULT now() [BE-07]"
+        TIMESTAMPTZ created_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
+        TIMESTAMPTZ updated_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
     }
 
     reservations {
@@ -92,86 +78,82 @@ erDiagram
         TIMESTAMPTZ start_time "NOT NULL [BE-07]"
         TIMESTAMPTZ end_time "NOT NULL [BE-07], CHECK end_time maior que start_time [BE-02]"
         VARCHAR_20 status "NOT NULL DEFAULT scheduled [BE-01], CHECK IN scheduled cancelled completed [BE-03]"
-        TIMESTAMPTZ created_at "DEFAULT now() [BE-07]"
-        TIMESTAMPTZ updated_at "DEFAULT now() [BE-07]"
+        TIMESTAMPTZ created_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
+        TIMESTAMPTZ updated_at "DEFAULT CURRENT_TIMESTAMP [BE-07]"
     }
 ```
 
-A constraint de tabela que o diagrama não consegue desenhar é o `EXCLUDE` de
-BE-01. O estado final de cada constraint, conferido com
-`pg_get_constraintdef` depois de aplicar o SQL das specs:
+Em banco criado do zero, o `initDb.js` da `main` já declara as colunas de
+data como `TIMESTAMPTZ NOT NULL` (`server/src/config/initDb.js:10-11`, `:18-19`
+e `:22-23`); em banco antigo, a migration `0001_timestamptz.sql` converte o
+tipo e mantém a coluna como estava.
+
+A constraint de tabela que o diagrama não consegue desenhar é o `EXCLUDE`. As
+constraints da `main`, como o `pg_get_constraintdef` as devolve depois de
+`npm run db:migrate`:
 
 ```sql
--- BE-02 (prefixo 1761000002000): janela válida, RN05
-ALTER TABLE reservations
-  ADD CONSTRAINT reservations_time_window_check CHECK (end_time > start_time);
+-- BE-01 e BE-07: a regra RN03 no banco
+reservations_no_overlap
+  EXCLUDE USING gist (resource_id WITH =, tstzrange(start_time, end_time) WITH &&)
+  WHERE (status <> 'cancelled')
 
--- BE-03 (prefixo 1761000003000): domínio fechado de status, RN07
-ALTER TABLE reservations
-  ADD CONSTRAINT reservations_status_check
-  CHECK (status IN ('scheduled', 'cancelled', 'completed'));
+-- BE-02: janela válida, RN05
+reservations_time_window_check
+  CHECK (end_time > start_time)
 
--- BE-07 (prefixo 1761000004000): instantes com fuso, RN11
-ALTER TABLE reservations
-  ALTER COLUMN start_time TYPE TIMESTAMPTZ USING start_time AT TIME ZONE 'America/Sao_Paulo',
-  ALTER COLUMN end_time   TYPE TIMESTAMPTZ USING end_time   AT TIME ZONE 'America/Sao_Paulo';
--- (mais created_at e updated_at nas duas tabelas, com DEFAULT now())
-
--- BE-01 (prefixo 1761000005000): a regra RN03 passa a ser inviolável
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-UPDATE reservations SET status = 'scheduled' WHERE status IS NULL;
-ALTER TABLE reservations ALTER COLUMN status SET NOT NULL;
-ALTER TABLE reservations
-  ADD CONSTRAINT reservations_no_overlap
-  EXCLUDE USING gist (
-    resource_id WITH =,
-    tstzrange(start_time, end_time, '[)') WITH &&
-  ) WHERE (status <> 'cancelled');
+-- BE-03: domínio fechado de status, RN07
+reservations_status_check
+  CHECK (status IN ('scheduled', 'cancelled', 'completed'))
 ```
 
-O bloco acima resume o efeito. As migrations completas, com as verificações de
-dado legado que abortam com mensagem útil, estão em cada spec.
+Mais o `SET NOT NULL` e o `SET DEFAULT 'scheduled'` em `status`
+(`server/migrations/001_reservation_no_overlap.sql`).
 
 Quatro observações técnicas que não podem se perder:
 
-1. **`btree_gist` é obrigatório.** O `EXCLUDE` combina igualdade em `integer`
-   (`resource_id WITH =`) com sobreposição de intervalo
-   (`tstzrange ... WITH &&`). O GiST nativo não cobre `=` em `integer`; a
-   extensão `btree_gist` fornece a classe de operadores. Ela vem no
-   `postgresql-contrib`, presente na imagem `postgres:16-alpine` do
-   `docker-compose.yml:5`, e exige papel com permissão para criar extensão.
-2. **A ordem das migrations é a da tabela de OPS-02:** BE-02, BE-03, BE-07,
-   BE-01. A ordem inversa entre BE-01 e BE-07 também funciona, porque a
-   migration de BE-07 remove o `EXCLUDE` antes de mudar o tipo das colunas e o
-   recria sobre `tstzrange`; as duas ordens foram executadas no teste da seção
-   5. OPS-02 fixa BE-07 primeiro para que nenhuma spec precise refazer a
-   constraint de outra.
-3. **Dado legado inválido bloqueia a constraint.** Um banco com `status NULL`
-   (alcançável hoje por um `PATCH` com corpo vazio, ver RN07), com intervalo
-   invertido ou com reservas sobrepostas faz o `ALTER` falhar. Por isso as
-   migrations de BE-01, BE-02 e BE-03 contam as linhas inválidas e abortam com
-   mensagem antes do `ADD CONSTRAINT`.
-4. **Nada disso funciona editando `initDb.js`.** `server/src/config/initDb.js:5`
-   e `:14` usam `CREATE TABLE IF NOT EXISTS`: em banco que já tem as tabelas,
-   o arquivo não faz nada. As mudanças **têm** de vir como migrations
-   versionadas (RNF02, OPS-02). Editar o `initDb.js` produz um schema correto
-   só em banco criado do zero, e um falso senso de pronto em todos os outros.
+1. **As migrations não rodam sozinhas.** `npm run db:migrate`
+   (`server/package.json:15`, `server/scripts/migrate.js`) aplica e registra
+   cada arquivo em `schema_migrations`, mas nem o boot
+   (`server/src/index.js:12` só chama o `initDb.js`) nem o `docker compose up`
+   o executam. Num banco recém-criado pelo compose, nada da seção acima existe:
+   o banco aceita as sete violações da seção 5.
+2. **`btree_gist` é obrigatório.** O `EXCLUDE` combina igualdade em `integer`
+   com sobreposição de intervalo, e a extensão `btree_gist` fornece a classe de
+   operadores. Ela vem no `postgresql-contrib`, presente na imagem
+   `postgres:16-alpine` do `docker-compose.yml:5`, e exige papel com permissão
+   para criar extensão.
+3. **A ordem dos arquivos desarma as checagens de dado legado.** O
+   `node scripts/migrate.js` aplica em ordem alfabética: `0001_timestamptz.sql`
+   vem antes de `001_reservation_no_overlap.sql`. Como o `0001` já cria o
+   `EXCLUDE`, ele roda antes da normalização de `status NULL` e da contagem de
+   sobreposições do `001`, e antes da contagem de intervalos invertidos do
+   `002`. Num banco com dado inválido, a migração falha com o erro cru do
+   PostgreSQL, por exemplo
+   `range lower bound must be less than or equal to range upper bound`, em vez
+   da mensagem que diz quantas linhas corrigir. Foi o que aconteceu ao migrar
+   um banco de teste com uma reserva invertida.
+4. **Nada disso funciona editando `initDb.js`.** O arquivo usa
+   `CREATE TABLE IF NOT EXISTS` (`server/src/config/initDb.js:5` e `:14`): em
+   banco que já tem as tabelas, não faz nada. Mudança de schema vem como
+   migration.
 
-### 2.1. Pendências declaradas do DER alvo
+### 2.1. Pendências declaradas
 
-Itens que o schema precisa e que **nenhuma spec com SQL se comprometeu a
-entregar**. Não estão no diagrama alvo, porque diagrama que promete o que
-ninguém vai fazer repete o defeito da documentação recebida.
+Itens que o schema precisa e que **nenhuma migration da `main` entrega**. Não
+estão no diagrama atual.
 
-| Pendência | Regra | Situação nas specs |
+| Pendência | Regra | Situação |
 |---|---|---|
-| `CHECK (type IN ('workstation','meeting_room'))` | RN01, BUG-10 | prefixo `1761000007000` reservado em OPS-02, sem spec. O índice de specs atribui BUG-10 a BE-03, mas a BE-03 só trata `status` |
-| `CHECK (capacity > 0)` | RN02, BUG-09 | mesmo prefixo `1761000007000`, sem spec. O índice atribui BUG-09 a BE-02, mas a BE-02 só trata a janela da reserva |
+| `CHECK (type IN ('workstation','meeting_room'))` | RN01, BUG-10 | issue #47; prefixo `1761000007000` reservado em OPS-02 |
+| `CHECK (capacity > 0)` | RN02, BUG-09 | issue #47; mesmo prefixo |
 | `reservations.resource_id SET NOT NULL` | RN10 | nenhuma spec e nenhum prefixo reservado |
-| `ON DELETE CASCADE` → `ON DELETE RESTRICT` | RN09, BUG-06 | prefixo `1761000008000` reservado em OPS-02, sem spec. FE-05 só avisa na interface e depende da decisão de BE-08 entre exclusão física e desativação lógica |
-| Índices em `reservations(resource_id)` e `reservations(start_time)` | CS-09 | prefixo `1761000006000` reservado em OPS-02, sem spec; OPS-02 pede `EXPLAIN ANALYZE` antes e depois, porque o `EXCLUDE` de BE-01 já cria um índice GiST em `resource_id` |
+| `ON DELETE CASCADE` → `ON DELETE RESTRICT` | RN09, BUG-06 | prefixo `1761000008000` reservado em OPS-02, sem spec. FE-05 (PR #44) avisa na interface; o PR #41 manteve a exclusão física |
+| Índices em `reservations(resource_id)` e `reservations(start_time)` | CS-09 | prefixo `1761000006000` reservado em OPS-02; o `EXCLUDE` já cria um índice GiST em `resource_id`, então falta medir com `EXPLAIN ANALYZE` se o B-tree compensa |
+| Aplicar as migrations na subida | RNF02, RNF15 | OPS-02 (#17) |
 
-SQL alvo das quatro primeiras, executado com sucesso no teste da seção 5:
+SQL alvo das quatro primeiras, executado com sucesso sobre a `main` migrada no
+teste da seção 5:
 
 ```sql
 ALTER TABLE resources
@@ -188,16 +170,15 @@ ALTER TABLE reservations
 Regra de processo: **quem implementar uma pendência atualiza este diagrama no
 mesmo PR.**
 
-### 2.2. Divergência entre specs a resolver
+### 2.2. Divergência entre specs e o que entrou
 
-A migration de BE-01 aplica `ALTER COLUMN status SET NOT NULL`
-([BE-01](../specs/be-01-prevent-double-booking/implementacao.md), passo 1),
-enquanto a tabela de prefixos de OPS-02 atribui o `SET NOT NULL` em `status` a
-BE-03. O diagrama alvo segue o SQL escrito, que está em BE-01. As specs também
-divergem no formato do arquivo de migration: BE-01, BE-02, BE-03 e BE-07 criam
-`.sql` com prefixo curto (`001_`, `0001_`), e OPS-02 reserva arquivos `.js` do
-`node-pg-migrate` com prefixo `1761000000000`. Os dois pontos ficam para o
-responsável de backend com o DevOps; este documento não decide por eles.
+O PR #41 seguiu as specs de backend, não a tabela de prefixos de OPS-02: as
+migrations são `.sql` com prefixo curto (`0001_`, `001_`, `002_`, `003_`), e
+não `.js` do `node-pg-migrate` com prefixo `1761000000000`; e o
+`SET NOT NULL` em `status` está no arquivo de BE-01, enquanto OPS-02 o
+atribuía a BE-03. A ordem que OPS-02 prescrevia (BE-02 e BE-03 antes de BE-01)
+é justamente a que evitaria o problema da observação 3. Os dois pontos estão
+na #17.
 
 ## 3. Mapeamento físico
 
@@ -214,7 +195,7 @@ Vocabulário gravado no banco. Use exatamente esta grafia:
 | Coluna | Valores reais | Evidência |
 |---|---|---|
 | `resources.type` | `workstation`, `meeting_room` | `client/src/constants/domain.js:1-4`, comentário em `initDb.js:8` |
-| `reservations.status` | `scheduled`, `cancelled`, `completed` | `client/src/constants/domain.js:11-15`, comentário em `initDb.js:20` |
+| `reservations.status` | `scheduled`, `cancelled`, `completed` | `server/src/domain/reservationStatus.js:1-5`, `client/src/constants/domain.js:11-15`, `reservations_status_check` |
 
 Atenção ao `cancelled` com **dois `l`**. O diagrama da documentação recebida
 escreve `Canceled` com um (`Documentação Oficial SREC.md:97`), além de usar
@@ -231,9 +212,9 @@ BE-06, QA-01 e QA-02, conforme aquele catálogo.
 
 | # | O que a doc dizia | O que o código faz | Resolução |
 |---|---|---|---|
-| D-01 | MER com `UUID id PK` nas duas entidades (`Documentação Oficial SREC.md:84`, `:92`) | `id SERIAL PRIMARY KEY`, inteiro sequencial (`initDb.js:6`, `:15`) | **Corrigir a doc.** O DER real desta página mostra `SERIAL`. Migrar para `UUID` mudaria o formato dos ids nas 6 rotas com `:id` (`server/src/routes/resourceRoutes.js:7-9`, `reservationRoutes.js:7-9`) e exigiria migrar a FK, sem benefício para o usuário. A exposição de cardinalidade por id sequencial fica como **débito da N3**, a pagar junto com autenticação (RF13). |
-| D-02 | `resources.is_active BOOLEAN` (`Documentação Oficial SREC.md:88`) | a coluna não existe (`initDb.js:5-12`); nenhum model a referencia (`resourceModel.js:6`, `:29`) | **Corrigir a doc.** O DER real e o alvo não têm a coluna. Registrada como RF15 e RN14 `documentado mas inexistente`. A decisão entre exclusão física e desativação lógica é de BE-08; hoje a única forma de tirar um espaço de circulação é `DELETE`, que destrói o histórico (RN09). |
-| D-03 | `reservations.user_id UUID` (`Documentação Oficial SREC.md:94`) | `user_name VARCHAR(100) NOT NULL`, texto livre (`initDb.js:17`, `client/src/features/reservations/ReservationForm.jsx:60-71`) | **Corrigir a doc** + **débito da N3**. O DER real mostra `user_name`. Identidade de usuário é funcionalidade nova, com tabela, autenticação e migração de dado: escopo de N3, não de manutenção. RF13 e RN12. |
+| D-01 | MER com `UUID id PK` nas duas entidades (`Documentação Oficial SREC.md:84`, `:92`) | `id SERIAL PRIMARY KEY`, inteiro sequencial (`initDb.js:6`, `:15`) | **Corrigir a doc.** Os dois diagramas desta página mostram `SERIAL`. Migrar para `UUID` mudaria o formato dos ids nas 6 rotas com `:id` (`server/src/routes/resourceRoutes.js:8-10`, `reservationRoutes.js:8-10`), que hoje `validateIdParam` exige inteiros, e exigiria migrar a FK, sem benefício para o usuário. A exposição de cardinalidade por id sequencial fica como **débito da N3**, a pagar junto com autenticação (RF13). |
+| D-02 | `resources.is_active BOOLEAN` (`Documentação Oficial SREC.md:88`) | a coluna não existe (`initDb.js:5-12`) e nenhuma migration a cria; nenhum model a referencia (`resourceModel.js:6`, `:29`) | **Corrigir a doc.** Registrada como RF15 e RN14 `documentado mas inexistente`. O PR #41 manteve a exclusão física, e o FE-05 a cercou de aviso; tirar um espaço de circulação ainda destrói o histórico (RN09). |
+| D-03 | `reservations.user_id UUID` (`Documentação Oficial SREC.md:94`) | `user_name VARCHAR(100) NOT NULL`, texto livre (`initDb.js:17`, `client/src/features/reservations/ReservationForm.jsx:73-81`) | **Corrigir a doc** + **débito da N3**. Identidade de usuário é funcionalidade nova, com tabela, autenticação e migração de dado: escopo de N3, não de manutenção. RF13 e RN12. |
 
 ### 4.1. O que confere
 
@@ -242,33 +223,39 @@ documentada em `Documentação Oficial SREC.md:72`,
 `Início_banco < Fim_novo AND Fim_banco > Início_novo`, é **exatamente** a
 implementada em `server/src/models/reservationModel.js:55`
 (`start_time < $3 AND end_time > $2`, com `$2` = início novo e `$3` = fim
-novo, conforme `reservationModel.js:59`).
+novo, conforme `reservationModel.js:58`).
 
-O grupo anterior acertou a regra central do produto. O defeito (BUG-01) está
+O grupo anterior acertou a regra central do produto. O defeito (BUG-01) estava
 em executá-la como `SELECT` isolado, fora de transação e sem constraint de
-respaldo. É isso que BE-01 conserta, promovendo a fórmula de consulta de
-aplicação a constraint `EXCLUDE` de banco.
+respaldo. O PR #41 promoveu a fórmula a constraint `EXCLUDE` de banco, que
+vale assim que as migrations são aplicadas.
 
 ## 5. Prova executada
 
-Roteiro rodado em PostgreSQL 16.15: schema recebido (`initDb.js:4-24`) com
-uma reserva de 09:00 às 10:00, sete violações antes, o SQL das specs aplicado
-na ordem de OPS-02, as mesmas sete violações depois, e por fim as pendências da
-seção 2.1.
+Roteiro rodado em PostgreSQL 16.15, com uma reserva de 09:00 às 10:00 já
+gravada e sete violações tentadas direto no banco, por `psql`:
 
-| # | Violação | Regra | Schema recebido | Depois das specs | Com as pendências |
-|---|---|---|---|---|---|
-| 1 | reserva sobreposta no mesmo espaço | RN03 | aceita | recusada (`reservations_no_overlap`) | recusada |
-| 2 | fim antes do início | RN05 | aceita | recusada (`reservations_time_window_check`) | recusada |
-| 3 | `status = 'banana'` | RN07 | aceita | recusada (`reservations_status_check`) | recusada |
-| 4 | `status = NULL` | RN07 | aceita | recusada (`NOT NULL`) | recusada |
-| 5 | `type = 'banana'` | RN01 | aceita | **aceita** | recusada (`resources_type_check`) |
-| 6 | `capacity = 0` | RN02 | aceita | **aceita** | recusada (`resources_capacity_check`) |
-| 7 | reserva com `resource_id NULL` | RN10 | aceita | **aceita** | recusada (`NOT NULL`) |
+* **Recebido:** schema de `initDb.js:4-24` no commit `8431181`.
+* **Main, só o boot:** banco criado pelo `initDb.js` da `main`, sem migrations.
+* **Main migrada:** o mesmo banco depois de `npm run db:migrate`.
+* **Com as pendências:** a `main` migrada mais o SQL da seção 2.1.
+
+| # | Violação | Regra | Recebido | Main, só o boot | Main migrada | Com as pendências |
+|---|---|---|---|---|---|---|
+| 1 | reserva sobreposta no mesmo espaço | RN03 | aceita | aceita | recusada (`reservations_no_overlap`) | recusada |
+| 2 | fim antes do início | RN05 | aceita | aceita | recusada (`reservations_time_window_check`) | recusada |
+| 3 | `status = 'banana'` | RN07 | aceita | aceita | recusada (`reservations_status_check`) | recusada |
+| 4 | `status = NULL` | RN07 | aceita | aceita | recusada (`NOT NULL`) | recusada |
+| 5 | `type = 'banana'` | RN01 | aceita | aceita | **aceita** | recusada (`resources_type_check`) |
+| 6 | `capacity = 0` | RN02 | aceita | aceita | **aceita** | recusada (`resources_capacity_check`) |
+| 7 | reserva com `resource_id NULL` | RN10 | aceita | aceita | **aceita** | recusada (`NOT NULL`) |
 
 Com as pendências aplicadas, `DELETE FROM resources` de um espaço com reserva
 também passa a ser recusado (`ON DELETE RESTRICT`, RN09).
 
-O resultado mais importante da tabela é a coluna do meio: as specs da N2, como
-estão escritas, fecham 4 das 7 brechas de integridade do banco. As outras 3
-dependem das pendências da seção 2.1.
+O resultado se lê em três passos: o banco recebido recusava **0 de 7**; a
+`main` migrada recusa **4 de 7**; as pendências da seção 2.1 levam a **7 de
+7**. A coluna "Main, só o boot" é o motivo da observação 1: sem
+`npm run db:migrate`, o ganho de integridade não chega ao banco. A API recusa
+as violações 2, 3, 4 e 7 por validação própria, mas a 1, sob concorrência, só
+a constraint garante.

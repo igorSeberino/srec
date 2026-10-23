@@ -52,12 +52,19 @@ recebido falha sob concorrência
 * [Estado atual](docs/arquitetura/estado-atual.md) — como o sistema é hoje, engenharia reversa
 * [Arquitetura alvo](docs/arquitetura/arquitetura-alvo.md) — onde chegamos ao fim da N2
 * [Decisões (ADRs)](docs/arquitetura/decisoes.md) — o que decidimos, as alternativas e o custo de cada escolha
+* [DER recebido e atual](docs/arquitetura/der.md) — o schema que recebemos, o da `main` depois das migrations e as pendências de integridade
 
 ### Produto, requisitos e time
 
 * [Visão do produto e regras de negócio](docs/produto/overview.md) e [requisitos](docs/produto/requisitos.md) — reconstruídos por engenharia reversa, cada um com situação explícita
 * [Equipe, papéis e Matriz RACI](docs/time/overview.md) — inclui DoR, DoD e gestão de débito técnico
 * [Fluxo Trunk-Based Development](docs/time/fluxo-tbd.md) — branches, commits, ciclo do PR
+
+### QA
+
+* [Plano de testes](docs/qa/plano-de-testes.md) — estratégia, fronteira automatizado/manual e critérios de aprovação do QA
+* [Roteiro de regressão manual](docs/qa/roteiro-regressao.md) — 56 passos executáveis, executar antes e depois de cada ciclo de refatoração
+* [Registros de execução](docs/qa/execucoes/) — resultados de cada rodada do roteiro, versionados
 
 ### Entrega
 
@@ -82,7 +89,9 @@ Os papéis rodam a cada entrega da disciplina. Nesta:
 | [Diego Nessler](https://github.com/Diegonessler) | Engenheiro de Requisitos |
 
 A Matriz RACI completa está em [`docs/time/overview.md`](docs/time/overview.md).
-O QA aprova todos os Pull Requests.
+O QA aprova todos os Pull Requests. A exceção são os PRs do próprio QA: o GitHub
+não permite autoaprovação, e esses PRs são aprovados pelo revisor substituto,
+Adrian (`@adrian-cesar`).
 
 Na N1 este sistema foi construído por Maria Eduarda Huida, Lucas Giovani Fruck
 e Gustavo José Paulo, do grupo MAGUGI.

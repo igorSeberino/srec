@@ -96,6 +96,8 @@ arquivo fora do escopo da issue foi alterado.
 * **Conventional Commits** em português, no imperativo, com escopo:
   `fix(reservations): impedir dupla reserva concorrente`.
 * PR pequeno. Merge exige **1 aprovação do QA (@igorSeberino) + CI verde**.
+  PR aberto pelo próprio Igor é aprovado pelo revisor substituto,
+  **@adrian-cesar** (o GitHub não permite autoaprovação).
 * O backlog vive no [GitHub Project](https://github.com/users/igorSeberino/projects/1).
   **Não crie item de backlog dentro de documento.**
 

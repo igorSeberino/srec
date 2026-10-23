@@ -32,8 +32,15 @@ decide o que fica de fora e defende a decisão no pitch. Dono do
 
 **QA (Igor).** **Aprova todos os PRs do time** — é o que a rubrica cobra em
 "Pull Requests aprovados pelo QA". Dono da suíte de testes de integração, dos
-testes de domínio e do roteiro de regressão manual. Bloqueia merge quando a
+testes de domínio e do [roteiro de regressão manual](../qa/roteiro-regressao.md)
+([plano de testes](../qa/plano-de-testes.md)). Bloqueia merge quando a
 Definition of Done não é cumprida.
+
+**Revisor substituto (Adrian).** O QA não aprova os próprios PRs: o GitHub não
+permite autoaprovação, e alguém precisa revisar o trabalho do revisor. Os PRs
+em que o Igor é autor (ONB-01, AUD-01, QA-01, QA-02, QA-03 e QA-04) são
+aprovados pelo **Adrian**, que foi o QA da N1. A substituição vale **só** para
+PRs de autoria do Igor; nos demais, aprovação do Adrian não substitui a do QA.
 
 Igor acumula os dois papéis, o que cria um conflito de interesse real: o PO
 quer entregar, o QA quer bloquear. A regra que adotamos para isso: **quando os
@@ -75,14 +82,15 @@ Só aparecem os papéis efetivamente envolvidos em cada atividade.
 | Suíte de testes automatizados | **R** | C | C | C | I |
 | Roteiro de regressão manual | **R** | I | I | C | I |
 | Aprovar Pull Requests | **R/A** | C | C | C | C |
+| Aprovar Pull Requests de autoria do Igor | I | I | **R/A** | I | I |
 | Engenharia reversa dos requisitos e regras de negócio | A | I | C | C | **R** |
 | DER e contrato da API (OpenAPI) | A | I | C | C | **R** |
 | Documento de handoff para a N3 | A | C | C | C | **R** |
 | Relatório antes/depois e pitch | **R/A** | C | C | C | C |
 
 Regra de leitura: **cada linha tem exatamente um R.** Onde aparece `R/A` é o
-Igor acumulando PO e QA, e nesse caso a aprovação é do papel que ele não está
-executando.
+Igor acumulando PO e QA. Acumular papéis não autoriza autoaprovação: quando o
+Igor é autor do PR, quem aprova é o Adrian, como revisor substituto.
 
 ## Qualidade: DoR e DoD
 
@@ -107,7 +115,7 @@ Verificado pelo QA na revisão do PR.
 * [ ] A CI está verde, incluindo lint e build.
 * [ ] Os commits seguem Conventional Commits em português no imperativo.
 * [ ] A documentação afetada foi atualizada no mesmo PR.
-* [ ] O PR foi **aprovado pelo QA**.
+* [ ] O PR foi **aprovado pelo QA** (ou pelo revisor substituto, @adrian-cesar, quando o autor é o próprio QA).
 * [ ] Nenhum arquivo fora do escopo da issue foi alterado.
 
 O último item existe por um motivo específico desta entrega: é código de outra
