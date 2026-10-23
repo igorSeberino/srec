@@ -38,11 +38,21 @@ export default [
         },
       ],
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
+      // Portões de qualidade estrutural (OPS-03, fase 1): warn.
+      complexity: ['warn', { max: 10 }],
+      'max-lines': ['warn', { max: 200, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['warn', { max: 80, skipBlankLines: true, skipComments: true }],
+      'max-depth': ['warn', { max: 3 }],
+      eqeqeq: ['warn', 'smart'],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
     },
+  },
+  {
+    files: ['**/*.test.{js,jsx}'],
+    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
   },
   prettierConfig,
 ];

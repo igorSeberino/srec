@@ -25,13 +25,11 @@ async function waitForDatabase(url) {
   }
 }
 
-// Monta o schema pelo mesmo caminho do sistema real: initDb cria as tabelas e
-// as migrations aplicam as constraints de BE-01/02/03. Nenhum arquivo de teste
-// cria tabela.
+// Monta o schema pelo mesmo caminho do sistema real: as migrations versionadas
+// (a 0000 cria as tabelas; as seguintes aplicam as constraints). Nenhum arquivo
+// de teste cria tabela.
 const prepareSchema = () => {
-  const env = { ...process.env };
-  execFileSync(process.execPath, ['-e', "require('./src/config/initDb')().then(() => require('./src/config/database').pool.end())"], { cwd: SERVER_DIR, env, stdio: 'pipe' });
-  execFileSync(process.execPath, ['scripts/migrate.js'], { cwd: SERVER_DIR, env, stdio: 'pipe' });
+  execFileSync(process.execPath, ['scripts/migrate.js'], { cwd: SERVER_DIR, env: { ...process.env }, stdio: 'pipe' });
 };
 
 module.exports = async () => {

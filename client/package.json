@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:strict": "eslint . --max-warnings=0",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
